@@ -24,7 +24,7 @@ env:
   - LOGGLY_TOKEN=null
   - LOGGLY_SUBDOMAIN=null
   - ROLLBAR_TOKEN=null
-  - GEMFURY_USER=neoncity
+  - GEMFURY_USER=base63
   # GEMFURY_API_KEY=???
   - secure: "OeCqWdNtSUOAB6MznuwwXVV3FrwTxjbn/m/4ekn83kdl06/gadJ6pKl/lRjZ1uv8cxUzgoR2vVxtIeN9nDcWzvyw5e5vVFvtD5XMzHLrs5knXzO0jl/eCLPRj+IruryQCKms73jBbvJb1OqojeeTmidY7ZpvuW8aWIS4bwTRJaMc8VLjsTk0qExYAD8ZyzpKNOZCIaXxiG97/mq+DwspJ3pOQzLpczciNy8l2Hl1nnyCYwfxadiwe0dNaUVSqezgA3ONzXwD3Hiadc/GoU961yPc6PqdlI3QA0HDx3fDP+2nATQw1BBSrf+OlDwmoVeNRcBcHQ1mg3gNnqRlhNWJvGfR+EMaau6/POH5jirtrnOBYA+c9+VhRblsNNnsIsFxKJkXx5iPXjlOCfpgcNKD7YL+dj1mCnkX/dKYdIQejeuQKtjUsDNeXvAiRB5d/D0rLp5HQzmI2A9IYaBUVPIXlVrYohUUULsCF0+AS0MpXe8j53SWAa4ry8HeYh39Kumh3ZEPYoJ/4SpMfNmHIQ+C0TtoK6zrO1neNwvpmnE41pG4zb7xN8yZHDRvkRo4rMPJ3QAnNma4VeLtFXql865qThj5DMqn0lPoQeHcIe3ZV+Zh9ab6KP0ape8LI9SZyd4chvqoDRbaFz6PeIcrsi+Z6paSIQNLxkal6RUi/9T05as="
 
@@ -45,7 +45,7 @@ deploy:
     tags: true
 # - provider: heroku
 #   skip_cleanup: true
-#   app: identity-staging-neoncity
+#   app: identity-staging-base63
 #   api_key:
 #     secure: "bkrJktWntQN9CX+C1/u3Hbg81EeJ7siSN6qgYC8l92vCe7KiguxpXa8LyYUmw/rtmCOBrYx51QWzBc2ivaDgrfFepjA4cMDgkTGUwCEJOYwos9Dq1S6AlQPiCsPoI/GtLCPbJf7cntf8iqJiMt4GfqUDEfvagCF5qOiphQtjmCY3wrFcDDB1PgbsBTYq596eEgKr1OcLt8965AL6Krad36WcpMRTTtqVujZdFR3U+VCWCfLd6N6NAWWt8+wUkjMmK2qzv8r1QyUDfmlJbhoh9SrTmP7nIjqhGmo0NTM/j4ANOic+17xhY9I93qTjpmiFO9OZcpa24L/928wMKYB0TH7EppRoODWzOd0PNdYtY3b5BWo2Uxt+HJPH9Mh9GL76A/6mlxNUTzKRo3/uiLloIWQLmEpETjbdMwS2YVpNrsBAEjdS1LO1NkesDXqzyxelODxTNn31tbfGvT/HAPq1/GhDy7gJa3MPdEAMaTMqfOM/Ursejx4sSrJDgsXKG0equJOwTrGY55NGkUUABUDJOM4hMkars/9Q88S+wVWUyV6ruWoKfDy/ljhBSBooT0PLI9nfbsAvV452GTMp/xlkoLcZGtsrHph3TWOQnWT8Q1AEpVVx1fweD8epUCv7wyCJ7uKTq6nJODdZm1mVDkwYIkF4ntpw0uKRONvAB8ePN2M="
 #   on:
