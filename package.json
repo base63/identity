@@ -1,5 +1,5 @@
 {
-  "name": "@neoncity/identity",
+  "name": "@base63/identity",
   "version": "0.0.0",
   "description": "The identity service.",
   "author": "Base63 team",
@@ -12,7 +12,7 @@
     "push-coverage-to-codecov": "codecov -f ./build/coverage/coverage-filtered.json",
     "docs": "typedoc src/"
   },
-  "respository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/base63/identity.git"
   },
