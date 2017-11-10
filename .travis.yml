@@ -1,0 +1,44 @@
+language: node_js
+
+node_js:
+- "node"
+
+env:
+  global:
+  - ENV=TEST
+  - ADDRESS=0.0.0.0
+  - PORT=10000
+  - DATABASE_URL=null
+  - DATABASE_MIGRATIONS_DIR=null
+  - DATABASE_MIGRATIONS_TABLE=null
+  - PGSSLMODE=require
+  - SECRET_PATH=null
+  - ORIGIN=null
+  - CLIENTS=null
+  - AUTH0_CLIENT_ID=null
+  - AUTH0_DOMAIN=null
+  - LOGGLY_TOKEN=null
+  - LOGGLY_SUBDOMAIN=null
+  - ROLLBAR_TOKEN=null
+  - GEMFURY_USER=neoncity
+  # GEMFURY_API_KEY=???
+  - secure: "EzbAUoZFAAiT5v0Ky4FuKE+SMjqqJravCHgB3WMjw//gvRedKFSqn9axvijBVFJb+NEfW2CguC0gNnYVKljxYh/6ADp0+hbkkqnIp4okPaJhWQqjado9DrFF4eFSLR3p9KBTyhQxGcQxmXV3+7pThM3NfyGUySfT+NOEOi7/eVYd6EfCg+EUBGeezvGgVEKYQ1xNAVMVvV2iezl/P8kERJht+p47VS58Q7G8bAi1rJ3hNq57VYZmSMnYUdJLKVBxHCtT0WF73JgJdEgxG/A3dPiMEK8WEahfXAQtHI5H7PAG7+/wUmm24RITTzxJMILchTBsfXXbeCP7fLqxGtZeKVmfuti5+auvJAIKid3nFm3klqnf1YhkznXYz6WLsD3f/M3OVpB6M9oKPHxrbE2ujHT/8Lxa7XCLc4iYqyx/hu0NbQjv83e1HTzh5Fme084QuKQ+GLxTbkb5LmGeI9wbzKN4iJWJWyNwBRa5PDj+AHY8npRjT2+RlLbq2f+zuuDIEKju58idMnCrzRxJDrLf6/RTgtycr5IZ+IwwZSBZTFp9FFakMyV/O0rl1xDmZi858WVn/BW4EaST7yOtaxmk5K83MjcqTzCo6PRBaY3BLi4idX2OF+B419/ILNSDkKzV/3VTdpxtrbJIjbvJCk6gueCok7ZxlKrpLdUU0jImk4Y="
+
+install:
+- npm install --registry=https://npm-proxy.fury.io/${GEMFURY_API_KEY}/${GEMFURY_USER}/ --progress=false
+
+script:
+- npm run test
+
+after_success:
+- npm run push-coverage-to-codecov
+
+deploy:
+- provider: script
+  skip_cleanup: true
+  script: $(npm bin)/togemfury --user ${GEMFURY_USER} --api_key ${GEMFURY_API_KEY}
+# - provider: heroku
+#   skip_cleanup: true
+#   app: identity-staging-neoncity
+#   api_key:
+#     secure: "bkrJktWntQN9CX+C1/u3Hbg81EeJ7siSN6qgYC8l92vCe7KiguxpXa8LyYUmw/rtmCOBrYx51QWzBc2ivaDgrfFepjA4cMDgkTGUwCEJOYwos9Dq1S6AlQPiCsPoI/GtLCPbJf7cntf8iqJiMt4GfqUDEfvagCF5qOiphQtjmCY3wrFcDDB1PgbsBTYq596eEgKr1OcLt8965AL6Krad36WcpMRTTtqVujZdFR3U+VCWCfLd6N6NAWWt8+wUkjMmK2qzv8r1QyUDfmlJbhoh9SrTmP7nIjqhGmo0NTM/j4ANOic+17xhY9I93qTjpmiFO9OZcpa24L/928wMKYB0TH7EppRoODWzOd0PNdYtY3b5BWo2Uxt+HJPH9Mh9GL76A/6mlxNUTzKRo3/uiLloIWQLmEpETjbdMwS2YVpNrsBAEjdS1LO1NkesDXqzyxelODxTNn31tbfGvT/HAPq1/GhDy7gJa3MPdEAMaTMqfOM/Ursejx4sSrJDgsXKG0equJOwTrGY55NGkUUABUDJOM4hMkars/9Q88S+wVWUyV6ruWoKfDy/ljhBSBooT0PLI9nfbsAvV452GTMp/xlkoLcZGtsrHph3TWOQnWT8Q1AEpVVx1fweD8epUCv7wyCJ7uKTq6nJODdZm1mVDkwYIkF4ntpw0uKRONvAB8ePN2M="

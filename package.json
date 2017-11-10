@@ -1,0 +1,66 @@
+{
+  "name": "@neoncity/identity",
+  "version": "0.0.0",
+  "description": "The identity service.",
+  "author": "Base63 team",
+  "scripts": {
+    "build": "tsc",
+    "serve-dev": "mkdir -p out && touch out/index.js && (tsc --watch & nodemon out/index.js) | bunyan --output short",
+    "serve-prod": "node out/index.js | bunyan --output simple",
+    "pretest": "npm run build",
+    "test": "istanbul cover --config ./.istanbul.yml ./node_modules/mocha/bin/_mocha --  $(find out -name '*-test.js') && remap-istanbul -i ./build/coverage/coverage-final.json -o ./build/coverage/coverage-remapped.json && coverage-filter -i ./build/coverage/coverage-remapped.json -o ./build/coverage/coverage-filtered.json",
+    "push-coverage-to-codecov": "codecov -f ./build/coverage/coverage-filtered.json",
+    "docs": "typedoc src/"
+  },
+  "respository": {
+    "type": "git",
+    "url": "git+https://github.com/base63/identity.git"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/base63/identity#readme",
+  "filesPack": {
+    "out": "e:.",
+    "migrations": "c:migrations",
+    "Procfile": "f:Procfile",
+    "knexfile.js": "f:knexfile.js",
+    "package.json": "f:package.json",
+    "tsconfig.json": "f:tsconfig.json"
+  },
+  "dependencies": {
+    "@base63/common-js": "=0.1.1",
+    "@base63/common-server-js": "=1.1.1",
+    "@base63/identity-sdk-js": "=0.1.1",
+    "async-middleware": "=1.2.1",
+    "auth0": "=2.8.0",
+    "compression": "=1.7.1",
+    "express": "=4.16.2",
+    "http-status-codes": "=1.3.0",
+    "knex": "=0.14.0",
+    "pg": "=7.4.0",
+    "raynor": "=0.10.2",
+    "uuid": "=3.1.0"
+  },
+  "devDependencies": {
+    "@base63/togemfury": "=0.0.1",
+    "@types/auth0": "=2.5.0",
+    "@types/bluebird": "=3.5.18",
+    "@types/chai": "=4.0.4",
+    "@types/compression": "=0.0.35",
+    "@types/es6-promise": "=0.0.33",
+    "@types/express": "=4.0.37",
+    "@types/http-status-codes": "=1.0.29",
+    "@types/knex": "=0.0.64",
+    "@types/mocha": "=2.2.38",
+    "@types/node": "=8.0.34",
+    "@types/uuid": "=3.4.3",
+    "chai": "=4.1.2",
+    "codecov": "=2.3.0",
+    "coverage-filter": "=1.0.0",
+    "istanbul": "=0.4.5",
+    "mocha": "=4.0.1",
+    "nodemon": "=1.12.0",
+    "remap-istanbul": "=0.9.5",
+    "typedoc": "=0.9.0",
+    "typescript": "=2.5.3"
+  }
+}
