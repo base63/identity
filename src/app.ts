@@ -6,7 +6,7 @@ import * as HttpStatus from 'http-status-codes'
 import { ArrayOf, MarshalFrom } from 'raynor'
 import * as r from 'raynor'
 
-import { isLocal } from '@base63/common-js'
+import { Env, isLocal } from '@base63/common-js'
 import {
     newCommonApiServerMiddleware,
     newCommonServerMiddleware,
@@ -23,11 +23,21 @@ import {
 } from '@base63/identity-sdk-js/session-token'
 
 import { Auth0Profile } from './auth0-profile'
-import * as config from './config'
 import { Repository } from './repository'
 
 
+export interface AppConfig {
+    env: Env;
+    name: string;
+    clients: string[];
+    logglyToken: string|null;
+    logglySubdomain: string|null;
+    rollbarToken: string|null;
+}
+
+
 export function newApp(
+    config: AppConfig,
     auth0Client: auth0.AuthenticationClient,
     repository: Repository): express.Express {
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
@@ -39,18 +49,18 @@ export function newApp(
     const app = express();
 
     app.disable('x-powered-by');
-    if (isLocal(config.ENV)) {
-        app.use(newLocalCommonServerMiddleware(config.NAME, config.ENV));
+    if (isLocal(config.env)) {
+        app.use(newLocalCommonServerMiddleware(config.name, config.env));
     } else {
         app.use(newCommonServerMiddleware(
-            config.NAME,
-            config.ENV,
-            config.LOGGLY_TOKEN as string,
-            config.LOGGLY_SUBDOMAIN as string,
-            config.ROLLBAR_TOKEN as string));
+            config.name,
+            config.env,
+            config.logglyToken as string,
+            config.logglySubdomain as string,
+            config.rollbarToken as string));
         app.use(compression());
     }
-    app.use(newCommonApiServerMiddleware(config.CLIENTS));
+    app.use(newCommonApiServerMiddleware(config.clients));
 
     app.post('/session', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);

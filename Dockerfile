@@ -1,6 +1,6 @@
 FROM heroku/heroku:16
 
-MAINTAINER NeonCity team <horia141@gmail.com>
+MAINTAINER Base63 team <horia141@gmail.com>
 
 ARG GEMFURY_USER
 ARG GEMFURY_API_KEY
@@ -16,32 +16,32 @@ RUN apt-get update -y && \
 
 # Setup directory structure.
 
-RUN mkdir /neoncity
-RUN mkdir /neoncity/build
-RUN mkdir /neoncity/out
-RUN mkdir /neoncity/var
+RUN mkdir /base63
+RUN mkdir /base63/build
+RUN mkdir /base63/out
+RUN mkdir /base63/var
 
 # Setup users and groups.
 
-RUN groupadd neoncity && \
-    useradd -ms /bin/bash -g neoncity neoncity
+RUN groupadd base63 && \
+    useradd -ms /bin/bash -g base63 base63
 
 # Install package requirements.
 
-# COPY package.json /neoncity/package.json
-# RUN cd /neoncity && npm install --registry=https://npm-proxy.fury.io/${GEMFURY_API_KEY}/${GEMFURY_USER}/ --progress=false
+# COPY package.json /base63/package.json
+# RUN cd /base63 && npm install --registry=https://npm-proxy.fury.io/${GEMFURY_API_KEY}/${GEMFURY_USER}/ --progress=false
 
 # Copy source code.
 
-COPY . /neoncity
+COPY . /base63
 
 # Setup the runtime environment for the application.
 
 ENV ENV LOCAL
 ENV ADDRESS 0.0.0.0
 ENV PORT 10000
-ENV DATABASE_URL postgresql://neoncity:neoncity@neoncity-postgres:5432/neoncity
-ENV DATABASE_MIGRATIONS_DIR /neoncity/migrations
+ENV DATABASE_URL postgresql://base63:base63@base63-postgres:5432/base63
+ENV DATABASE_MIGRATIONS_DIR /base63/migrations
 ENV DATABASE_MIGRATIONS_TABLE migrations_identity
 ENV ORIGIN http://localhost:10001
 ENV CLIENTS http://localhost:10002,http://localhost:10003
@@ -50,16 +50,16 @@ ENV AUTH0_DOMAIN null
 ENV LOGGLY_TOKEN null
 ENV LOGGLY_SUBDOMAIN null
 ENV ROLLBAR_TOKEN null
-ENV SECRETS_PATH /neoncity/var/secrets.json
+ENV SECRETS_PATH /base63/var/secrets.json
 
-RUN chown -R neoncity:neoncity /neoncity/build
-RUN chown -R neoncity:neoncity /neoncity/out
-RUN chown -R neoncity:neoncity /neoncity/var
-VOLUME ["/neoncity/src"]
-VOLUME ["/neoncity/migrations"]
-VOLUME ["/neoncity/node_modules"]
-VOLUME ["/neoncity/var/secrets.json"]
-WORKDIR /neoncity
+RUN chown -R base63:base63 /base63/build
+RUN chown -R base63:base63 /base63/out
+RUN chown -R base63:base63 /base63/var
+VOLUME ["/base63/src"]
+VOLUME ["/base63/migrations"]
+VOLUME ["/base63/node_modules"]
+VOLUME ["/base63/var/secrets.json"]
+WORKDIR /base63
 EXPOSE 10000
-USER neoncity
+USER base63
 ENTRYPOINT ["npm", "run", "serve-dev"]

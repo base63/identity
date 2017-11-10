@@ -20,8 +20,14 @@ function main() {
         connection: process.env.DATABASE_URL
     });
     const repository = new Repository(conn);
-
-    const app = newApp(auth0Client, repository);
+    const app = newApp({
+        env: config.ENV,
+        name: config.NAME,
+        clients: config.CLIENTS,
+        logglyToken: config.LOGGLY_TOKEN,
+        logglySubdomain: config.LOGGLY_SUBDOMAIN,
+        rollbarToken: config.ROLLBAR_TOKEN
+    }, auth0Client, repository);
 
     app.listen(config.PORT, config.ADDRESS, () => {
         console.log(`Started identity service on ${config.ADDRESS}:${config.PORT}`);
