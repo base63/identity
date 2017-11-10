@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@base63/common-js": "=0.1.1",
-    "@base63/common-server-js": "=1.1.1",
-    "@base63/identity-sdk-js": "=0.1.1",
+    "@base63/common-server-js": "=1.2.0",
+    "@base63/identity-sdk-js": "=0.1.2",
     "async-middleware": "=1.2.1",
     "auth0": "=2.8.0",
     "compression": "=1.7.1",

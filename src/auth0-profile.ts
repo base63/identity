@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import * as r from 'raynor'
 import { MarshalWith, TryInOrder } from 'raynor'
 
-import { LanguageFromLocaleMarshaller, LanguageMarshaller } from '@neoncity/common-js'
+import { LanguageFromLocaleMarshaller, LanguageMarshaller } from '@base63/common-js'
 
 
 export class Auth0Profile {

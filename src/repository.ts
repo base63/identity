@@ -5,16 +5,18 @@ import * as uuid from 'uuid'
 import { randomBytes } from 'crypto'
 
 import {
-    AuthInfo,
     Role,
     PrivateUser,
     PublicUser,
     Session,
     SessionState,
-    SessionEventType,
-    UserEventType,
     UserState
-} from '@neoncity/identity-sdk-js'
+} from '@base63/identity-sdk-js'
+import {
+    SessionEventType,
+    UserEventType
+} from '@base63/identity-sdk-js/events'
+import { SessionToken } from '@base63/identity-sdk-js/session-token'
 
 import { Auth0Profile } from './auth0-profile'
 
@@ -71,9 +73,9 @@ export class Repository {
         'identity.user.state as user_state',
         'identity.user.role as user_role',
         'identity.user.agreed_to_cookie_policy as user_agreed_to_cookie_policy',
-        'identity.user.auth0_user_id as user_auth0_user_id',
-        'identity.user.auth0_user_id_hash as user_auth0_user_id_hash',
-        'identity.user.auth0_profile as user_auth0_profile',
+        'identity.user.provider_user_id as user_provider_user_id',
+        'identity.user.provider_user_id_hash as user_provider_user_id_hash',
+        'identity.user.provider_profile as user_provider_profile',
         'identity.user.time_created as user_time_created',
         'identity.user.time_last_updated as user_time_last_updated',
         'identity.user.time_removed as user_time_removed'
@@ -87,7 +89,7 @@ export class Repository {
         this._auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
     }
 
-    async getOrCreateSession(authInfo: AuthInfo | null, requestTime: Date): Promise<[AuthInfo, Session, boolean]> {
+    async getOrCreateSession(authInfo: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
         let dbSession: any | null = null;
         let needToCreateSession = authInfo == null;
 
@@ -139,11 +141,11 @@ export class Repository {
             }
         });
 
-        const newAuthInfo = new AuthInfo(dbSession['session_id']);
-        return [newAuthInfo, Repository._dbSessionToSession(dbSession), needToCreateSession];
+        const newSessionToken = new SessionToken(dbSession['session_id']);
+        return [newSessionToken, Repository._dbSessionToSession(dbSession), needToCreateSession];
     }
 
-    async getSession(authInfo: AuthInfo): Promise<Session> {
+    async getSession(authInfo: SessionToken): Promise<Session> {
         const dbSessions = await this._conn('identity.session')
             .select(Repository._sessionFields)
             .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
@@ -159,7 +161,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
-    async expireSession(authInfo: AuthInfo, requestTime: Date, xsrfToken: string): Promise<void> {
+    async expireSession(authInfo: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
         await this._conn.transaction(async (trx) => {
             const dbSessions = await trx
                 .from('identity.session')
@@ -167,7 +169,7 @@ export class Repository {
                 .andWhere('id', authInfo.sessionId)
                 .returning(['id', 'xsrf_token'])
                 .update({
-                    'state': SessionState.Expired,
+                    'state': SessionState.Removed,
                     'time_last_updated': requestTime,
                     'time_removed': requestTime
                 });
@@ -185,7 +187,7 @@ export class Repository {
             await trx
                 .from('identity.session_event')
                 .insert({
-                    'type': SessionEventType.Expired,
+                    'type': SessionEventType.Removed,
                     'timestamp': requestTime,
                     'data': null,
                     'session_id': authInfo.sessionId
@@ -193,7 +195,7 @@ export class Repository {
         });
     }
 
-    async agreeToCookiePolicyForSession(authInfo: AuthInfo, requestTime: Date, xsrfToken: string): Promise<Session> {
+    async agreeToCookiePolicyForSession(authInfo: SessionToken, requestTime: Date, xsrfToken: string): Promise<Session> {
         let dbSession: any | null = null;
 
         await this._conn.transaction(async (trx) => {
@@ -254,7 +256,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
-    async getOrCreateUserOnSession(authInfo: AuthInfo, auth0Profile: Auth0Profile, requestTime: Date, xsrfToken: string): Promise<[AuthInfo, Session, boolean]> {
+    async getOrCreateUserOnSession(authInfo: SessionToken, auth0Profile: Auth0Profile, requestTime: Date, xsrfToken: string): Promise<[SessionToken, Session, boolean]> {
         const userId = auth0Profile.userId;
         const userIdHash = auth0Profile.getUserIdHash();
 
@@ -283,14 +285,14 @@ export class Repository {
             }
 
             const rawResponse = await trx.raw(`
-                    insert into identity.user (state, role, agreed_to_cookie_policy, auth0_user_id, auth0_user_id_hash, auth0_profile, time_created, time_last_updated)
+                    insert into identity.user (state, role, agreed_to_cookie_policy, provider_user_id, provider_user_id_hash, provider_profile, time_created, time_last_updated)
                     values (?, ?, ?, ?, ?, ?, ?, ?)
-                    on conflict (auth0_user_id_hash)
+                    on conflict (provider_user_id_hash)
                     do update
                     set time_last_updated = excluded.time_last_updated,
                         state=${UserState.Active},
                         agreed_to_cookie_policy = identity.user.agreed_to_cookie_policy OR excluded.agreed_to_cookie_policy,
-                        auth0_profile = excluded.auth0_profile
+                        provider_profile = excluded.provider_profile
                     returning id, time_created, agreed_to_cookie_policy`,
                 [UserState.Active, Role.Regular, dbSession['session_agreed_to_cookie_policy'], userId, userIdHash, this._auth0ProfileMarshaller.pack(auth0Profile), requestTime, requestTime]);
 
@@ -386,20 +388,20 @@ export class Repository {
         session.user.timeCreated = dbUserTimeCreated;
         session.user.timeLastUpdated = requestTime;
         session.user.agreedToCookiePolicy = dbUserAgreedToCookiePolicy;
-        session.user.auth0UserIdHash = userIdHash;
+        session.user.userIdHash = userIdHash;
         session.timeCreated = dbSession['session_time_created'];
         session.timeLastUpdated = dbSession['session_time_last_updated'];
 
         return [authInfo, session, userEventType as UserEventType == UserEventType.Created as UserEventType];
     }
 
-    async getUserOnSession(authInfo: AuthInfo, auth0Profile: Auth0Profile): Promise<Session> {
+    async getUserOnSession(authInfo: SessionToken, auth0Profile: Auth0Profile): Promise<Session> {
         const userIdHash = auth0Profile.getUserIdHash();
 
         // Lookup id hash in database
         const dbUsers = await this._conn('identity.user')
             .select(Repository._userFields)
-            .where({ auth0_user_id_hash: userIdHash, state: UserState.Active })
+            .where({ provider_user_id_hash: userIdHash, state: UserState.Active })
             .limit(1);
 
         if (dbUsers.length == 0) {
@@ -427,7 +429,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession, dbUser, auth0Profile);
     }
 
-    async getUsersInfo(_authInfo: AuthInfo, ids: number[]): Promise<PublicUser[]> {
+    async getUsersInfo(_authInfo: SessionToken, ids: number[]): Promise<PublicUser[]> {
         if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
             throw new RepositoryError(`Can't retrieve ${ids.length} users`);
         }
@@ -463,7 +465,7 @@ export class Repository {
                 user.timeCreated = new Date(dbUser['user_time_created']);
                 user.timeLastUpdated = new Date(dbUser['user_time_last_updated']);
                 user.agreedToCookiePolicy = dbUser['user_agreed_to_cookie_policy'];
-                user.auth0UserIdHash = dbUser['user_auth0_user_id_hash'];
+                user.userIdHash = dbUser['user_provider_user_id_hash'];
                 return user;
             })()
             : null;
@@ -474,7 +476,7 @@ export class Repository {
     }
 
     _dbUserToPublicUser(dbUser: any): PublicUser {
-        const auth0Profile = this._auth0ProfileMarshaller.extract(dbUser['user_auth0_profile']);
+        const auth0Profile = this._auth0ProfileMarshaller.extract(dbUser['user_provider_profile']);
 
         const user = new PublicUser();
         user.id = dbUser['user_id'];

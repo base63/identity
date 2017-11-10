@@ -7,27 +7,24 @@ import * as knex from 'knex'
 import { ArrayOf, MarshalFrom } from 'raynor'
 import * as r from 'raynor'
 
-import { isLocal } from '@neoncity/common-js'
+import { isLocal } from '@base63/common-js'
 import {
-    AuthInfoLevel,
-    newAuthInfoMiddleware,
-    newCheckOriginMiddleware,
-    newCheckXsrfTokenMiddleware,
-    newErrorsMiddleware,
-    newJsonContentMiddleware,
-    newLoggingMiddleware,
-    newRequestTimeMiddleware,
+    newCommonApiServerMiddleware,
+    newCommonServerMiddleware,
+    newLocalCommonServerMiddleware,
+    Request,
     startupMigration
-} from '@neoncity/common-server-js'
+} from '@base63/common-server-js'
 import {
-    AuthInfo,
-    AuthInfoAndSessionResponse,
+    SessionAndTokenResponse,
     SessionResponse,
     UsersInfoResponse
-} from '@neoncity/identity-sdk-js'
+} from '@base63/identity-sdk-js/dtos'
+import {
+    SessionToken
+} from '@base63/identity-sdk-js/session-token'
 
 import { Auth0Profile } from './auth0-profile'
-import { IdentityRequest } from './identity-request'
 import * as config from './config'
 import { Repository } from './repository'
 
@@ -47,31 +44,36 @@ async function main() {
     const repository = new Repository(conn);
 
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
-    const authInfoAndSessionResponseMarshaller = new (MarshalFrom(AuthInfoAndSessionResponse))();
+    const sessionAndTokenResponseMarshaller = new (MarshalFrom(SessionAndTokenResponse))();
     const sessionResponseMarshaller = new (MarshalFrom(SessionResponse))();
     const usersInfoResponseMarshaller = new (MarshalFrom(UsersInfoResponse))();
     const idsMarshaller = new (ArrayOf(r.IdMarshaller))();
 
     app.disable('x-powered-by');
-    app.use(newRequestTimeMiddleware());
-    app.use(newCheckOriginMiddleware(config.CLIENTS));
-    app.use(newJsonContentMiddleware());
-    app.use(newLoggingMiddleware(config.NAME, config.ENV, config.LOGGLY_TOKEN, config.LOGGLY_SUBDOMAIN));
-    app.use(newErrorsMiddleware(config.NAME, config.ENV, config.ROLLBAR_TOKEN));
-
-    if (!isLocal(config.ENV)) {
+    if (isLocal(config.ENV)) {
+        app.use(newLocalCommonServerMiddleware(config.NAME, config.ENV));
+    } else {
+        app.use(newCommonServerMiddleware(
+            config.NAME,
+            config.ENV,
+            config.LOGGLY_TOKEN as string,
+            config.LOGGLY_SUBDOMAIN as string,
+            config.ROLLBAR_TOKEN as string));
         app.use(compression());
     }
+    app.use(newCommonApiServerMiddleware(config.CLIENTS));
 
-    app.post('/session', newAuthInfoMiddleware(AuthInfoLevel.None), wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.post('/session', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+
         try {
-            const [authInfo, session, created] = await repository.getOrCreateSession(req.authInfo, req.requestTime);
+            const [sessionToken, session, created] = await repository.getOrCreateSession(currentSessionToken, req.requestTime);
 
-            const authInfoAndSessionResponse = new AuthInfoAndSessionResponse();
-            authInfoAndSessionResponse.authInfo = authInfo;
-            authInfoAndSessionResponse.session = session;
+            const sessionTokenAndSessionResponse = new SessionAndTokenResponse();
+            sessionTokenAndSessionResponse.sessionToken = sessionToken;
+            sessionTokenAndSessionResponse.session = session;
 
-            res.write(JSON.stringify(authInfoAndSessionResponseMarshaller.pack(authInfoAndSessionResponse)));
+            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionTokenAndSessionResponse)));
             res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
             res.end();
         } catch (e) {
@@ -82,9 +84,17 @@ async function main() {
         }
     }));
 
-    app.get('/session', newAuthInfoMiddleware(AuthInfoLevel.SessionId), wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.get('/session', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         try {
-            const session = await repository.getSession(req.authInfo as AuthInfo);
+            const session = await repository.getSession(currentSessionToken);
 
             const sessionResponse = new SessionResponse();
             sessionResponse.session = session;
@@ -106,12 +116,25 @@ async function main() {
         }
     }));
 
-    app.delete('/session', [
-        newAuthInfoMiddleware(AuthInfoLevel.SessionId),
-        newCheckXsrfTokenMiddleware(true)
-    ], wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.delete('/session', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
+        const xsrfToken = extractXsrfToken(req);
+        if (xsrfToken == null) {
+            req.log.warn('Expected a XSRF token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         try {
-            await repository.expireSession(req.authInfo as AuthInfo, req.requestTime, req.xsrfToken as string);
+            await repository.expireSession(currentSessionToken, req.requestTime, xsrfToken);
 
             res.status(HttpStatus.NO_CONTENT);
             res.end();
@@ -135,12 +158,25 @@ async function main() {
         }
     }));
 
-    app.post('/session/agree-to-cookie-policy', [
-        newAuthInfoMiddleware(AuthInfoLevel.SessionId),
-        newCheckXsrfTokenMiddleware(true)
-    ], wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.post('/session/agree-to-cookie-policy', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
+        const xsrfToken = extractXsrfToken(req);
+        if (xsrfToken == null) {
+            req.log.warn('Expected a XSRF token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         try {
-            const session = await repository.agreeToCookiePolicyForSession(req.authInfo as AuthInfo, req.requestTime, req.xsrfToken as string);
+            const session = await repository.agreeToCookiePolicyForSession(currentSessionToken, req.requestTime, xsrfToken);
 
             const sessionResponse = new SessionResponse();
             sessionResponse.session = session;
@@ -174,13 +210,26 @@ async function main() {
         }
     }));
 
-    app.post('/user', [
-        newAuthInfoMiddleware(AuthInfoLevel.SessionIdAndAuth0AccessToken),
-        newCheckXsrfTokenMiddleware(true)
-    ], wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.post('/user',wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
+        const xsrfToken = extractXsrfToken(req);
+        if (xsrfToken == null) {
+            req.log.warn('Expected a XSRF token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         let auth0Profile: Auth0Profile | null = null;
         try {
-            const auth0AccessToken = (req.authInfo as AuthInfo).auth0AccessToken as string;
+            const auth0AccessToken = currentSessionToken.userToken as string;
             const auth0ProfileSerialized = await auth0Client.getProfile(auth0AccessToken);
 
             if (auth0ProfileSerialized == 'Unauthorized') {
@@ -200,13 +249,13 @@ async function main() {
         }
 
         try {
-            const [authInfo, session, created] = await repository.getOrCreateUserOnSession(req.authInfo as AuthInfo, auth0Profile, req.requestTime, req.xsrfToken as string);
+            const [sessionToken, session, created] = await repository.getOrCreateUserOnSession(currentSessionToken, auth0Profile, req.requestTime, xsrfToken);
 
-            const authInfoAndSessionResponse = new AuthInfoAndSessionResponse();
-            authInfoAndSessionResponse.authInfo = authInfo;
-            authInfoAndSessionResponse.session = session;
+            const sessionTokenAndSessionResponse = new SessionAndTokenResponse();
+            sessionTokenAndSessionResponse.sessionToken = sessionToken;
+            sessionTokenAndSessionResponse.session = session;
 
-            res.write(JSON.stringify(authInfoAndSessionResponseMarshaller.pack(authInfoAndSessionResponse)));
+            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionTokenAndSessionResponse)));
             res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
             res.end();
         } catch (e) {
@@ -229,10 +278,18 @@ async function main() {
         }
     }));
 
-    app.get('/user', newAuthInfoMiddleware(AuthInfoLevel.SessionIdAndAuth0AccessToken), wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.get('/user', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         let auth0Profile: Auth0Profile | null = null;
         try {
-            const auth0AccessToken = (req.authInfo as AuthInfo).auth0AccessToken as string;
+            const auth0AccessToken = currentSessionToken.userToken as string;
             const auth0ProfileSerialized = await auth0Client.getProfile(auth0AccessToken);
 
             if (auth0ProfileSerialized == 'Unauthorized') {
@@ -252,7 +309,7 @@ async function main() {
         }
 
         try {
-            const session = await repository.getUserOnSession(req.authInfo as AuthInfo, auth0Profile);
+            const session = await repository.getUserOnSession(currentSessionToken, auth0Profile);
 
             const sessionResponse = new SessionResponse();
             sessionResponse.session = session;
@@ -280,7 +337,15 @@ async function main() {
         }
     }));
 
-    app.get('/users-info', newAuthInfoMiddleware(AuthInfoLevel.SessionId), wrap(async (req: IdentityRequest, res: express.Response) => {
+    app.get('/users-info', wrap(async (req: Request, res: express.Response) => {
+        const currentSessionToken = extractSessionToken(req);
+        if (currentSessionToken == null) {
+            req.log.warn('Expected a session token to exist');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         if (req.query.ids === undefined) {
             req.log.warn('Missing required "ids" parameter');
             res.status(HttpStatus.BAD_REQUEST);
@@ -306,7 +371,7 @@ async function main() {
         }
 
         try {
-            const usersInfo = await repository.getUsersInfo(req.authInfo as AuthInfo, ids);
+            const usersInfo = await repository.getUsersInfo(currentSessionToken, ids);
             const usersInfoResponse = new UsersInfoResponse();
             usersInfoResponse.usersInfo = usersInfo;
 
@@ -330,6 +395,14 @@ async function main() {
     app.listen(config.PORT, config.ADDRESS, () => {
         console.log(`Started identity service on ${config.ADDRESS}:${config.PORT}`);
     });
+
+    function extractSessionToken(_req: Request): SessionToken | null {
+        return null;
+    }
+
+    function extractXsrfToken(_req: Request): string | null {
+        return null;
+    }
 }
 
 
