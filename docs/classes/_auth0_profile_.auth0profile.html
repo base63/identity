@@ -69,6 +69,13 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The information about a user exposed by <a href="https://auth0.com" class="external">Auth0</a>.</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -107,9 +114,14 @@
 					<div class="tsd-signature tsd-kind-icon">language<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/base63/identity/blob/d587dfc/src/auth0-profile.ts#L19">auth0-profile.ts:19</a></li>
+							<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/auth0-profile.ts#L29">auth0-profile.ts:29</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The user&#39;s language code</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="name" class="tsd-anchor"></a>
@@ -117,9 +129,14 @@
 					<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/base63/identity/blob/d587dfc/src/auth0-profile.ts#L10">auth0-profile.ts:10</a></li>
+							<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/auth0-profile.ts#L17">auth0-profile.ts:17</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The full name of the user</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="picture" class="tsd-anchor"></a>
@@ -127,9 +144,14 @@
 					<div class="tsd-signature tsd-kind-icon">picture<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/base63/identity/blob/d587dfc/src/auth0-profile.ts#L13">auth0-profile.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/auth0-profile.ts#L21">auth0-profile.ts:21</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>An https Uri for a picture of the user</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="userid" class="tsd-anchor"></a>
@@ -137,9 +159,14 @@
 					<div class="tsd-signature tsd-kind-icon">user<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/base63/identity/blob/d587dfc/src/auth0-profile.ts#L16">auth0-profile.ts:16</a></li>
+							<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/auth0-profile.ts#L25">auth0-profile.ts:25</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A unique user identifier</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -154,10 +181,21 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/d587dfc/src/auth0-profile.ts#L21">auth0-profile.ts:21</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/auth0-profile.ts#L36">auth0-profile.ts:36</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Compute a hash of the user&#39;s id for storage purposes.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>detail</dt>
+									<dd><p>Uses the SHA256 of the <a href="_auth0_profile_.auth0profile.html#userid">userId</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							<p>A 64 characters length string representation of the hash.</p>
 						</li>
 					</ul>
 				</section>
