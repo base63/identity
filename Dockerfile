@@ -1,18 +1,9 @@
-FROM heroku/heroku:16
+FROM node
 
 MAINTAINER Base63 team <horia141@gmail.com>
 
 ARG GEMFURY_USER
 ARG GEMFURY_API_KEY
-
-# Install global packages.
-
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends \
-            git \
-            nodejs-legacy \
-            npm && \
-    apt-get clean
 
 # Setup directory structure.
 
