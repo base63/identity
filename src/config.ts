@@ -1,7 +1,10 @@
 import { readFileSync } from 'fs'
+import { config } from 'dotenv'
 
 import { Env, parseEnv, isLocal, isOnServer } from '@base63/common-js'
 import { getFromEnv } from '@base63/common-server-js'
+
+config();
 
 export const NAME: string = 'identity';
 export const ENV: Env = parseEnv(getFromEnv('ENV'));

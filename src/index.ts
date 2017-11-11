@@ -17,7 +17,7 @@ function main() {
     });
     const conn = knex({
         client: 'pg',
-        connection: process.env.DATABASE_URL
+        connection: config.DATABASE_URL
     });
     const repository = new Repository(conn);
     const app = newApp({

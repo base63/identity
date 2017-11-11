@@ -89,18 +89,18 @@ export class Repository {
         this._auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
     }
 
-    async getOrCreateSession(authInfo: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
+    async getOrCreateSession(sessionToken: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
         let dbSession: any | null = null;
-        let needToCreateSession = authInfo == null;
+        let needToCreateSession = sessionToken == null;
 
         await this._conn.transaction(async (trx) => {
             // If there's some auth info, might as well try to retrieve it.
-            if (authInfo != null) {
+            if (sessionToken != null) {
                 const dbSessions = await trx
                     .from('identity.session')
                     .select(Repository._sessionFields)
                     .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
-                    .andWhere('id', authInfo.sessionId)
+                    .andWhere('id', sessionToken.sessionId)
                     .limit(1);
 
                 // If we can't retrieve it we need to create a new session.
@@ -145,11 +145,11 @@ export class Repository {
         return [newSessionToken, Repository._dbSessionToSession(dbSession), needToCreateSession];
     }
 
-    async getSession(authInfo: SessionToken): Promise<Session> {
+    async getSession(sessionToken: SessionToken): Promise<Session> {
         const dbSessions = await this._conn('identity.session')
             .select(Repository._sessionFields)
             .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
-            .andWhere('id', authInfo.sessionId)
+            .andWhere('id', sessionToken.sessionId)
             .limit(1);
 
         if (dbSessions.length == 0) {
@@ -161,12 +161,12 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
-    async expireSession(authInfo: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
+    async expireSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
         await this._conn.transaction(async (trx) => {
             const dbSessions = await trx
                 .from('identity.session')
                 .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
-                .andWhere('id', authInfo.sessionId)
+                .andWhere('id', sessionToken.sessionId)
                 .returning(['id', 'xsrf_token'])
                 .update({
                     'state': SessionState.Removed,
@@ -190,19 +190,19 @@ export class Repository {
                     'type': SessionEventType.Removed,
                     'timestamp': requestTime,
                     'data': null,
-                    'session_id': authInfo.sessionId
+                    'session_id': sessionToken.sessionId
                 });
         });
     }
 
-    async agreeToCookiePolicyForSession(authInfo: SessionToken, requestTime: Date, xsrfToken: string): Promise<Session> {
+    async agreeToCookiePolicyForSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<Session> {
         let dbSession: any | null = null;
 
         await this._conn.transaction(async (trx) => {
             const dbSessions = await trx
                 .from('identity.session')
                 .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
-                .andWhere('id', authInfo.sessionId)
+                .andWhere('id', sessionToken.sessionId)
                 .returning(Repository._sessionFields)
                 .update({
                     'agreed_to_cookie_policy': true,
@@ -225,7 +225,7 @@ export class Repository {
                     'type': SessionEventType.AgreedToCookiePolicy,
                     'timestamp': requestTime,
                     'data': null,
-                    'session_id': authInfo.sessionId
+                    'session_id': sessionToken.sessionId
                 });
 
             if (dbSession['session_user_id'] != null) {
@@ -256,7 +256,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
-    async getOrCreateUserOnSession(authInfo: SessionToken, auth0Profile: Auth0Profile, requestTime: Date, xsrfToken: string): Promise<[SessionToken, Session, boolean]> {
+    async getOrCreateUserOnSession(sessionToken: SessionToken, auth0Profile: Auth0Profile, requestTime: Date, xsrfToken: string): Promise<[SessionToken, Session, boolean]> {
         const userId = auth0Profile.userId;
         const userIdHash = auth0Profile.getUserIdHash();
 
@@ -271,7 +271,7 @@ export class Repository {
                 .from('identity.session')
                 .select(Repository._sessionFields)
                 .whereIn('state', [SessionState.Active, SessionState.ActiveAndLinkedWithUser])
-                .andWhere('id', authInfo.sessionId)
+                .andWhere('id', sessionToken.sessionId)
                 .limit(1);
 
             if (dbSessions.length == 0) {
@@ -344,7 +344,7 @@ export class Repository {
             if (dbSession['session_user_id'] == null) {
                 await trx
                     .from('identity.session')
-                    .where({ id: authInfo.sessionId })
+                    .where({ id: sessionToken.sessionId })
                     .update({
                         state: SessionState.ActiveAndLinkedWithUser,
                         agreed_to_cookie_policy: dbUserAgreedToCookiePolicy,
@@ -368,7 +368,7 @@ export class Repository {
                             'type': SessionEventType.AgreedToCookiePolicy,
                             'timestamp': requestTime,
                             'data': null,
-                            'session_id': authInfo.sessionId
+                            'session_id': sessionToken.sessionId
                         });
                 }
             }
@@ -392,10 +392,10 @@ export class Repository {
         session.timeCreated = dbSession['session_time_created'];
         session.timeLastUpdated = dbSession['session_time_last_updated'];
 
-        return [authInfo, session, userEventType as UserEventType == UserEventType.Created as UserEventType];
+        return [sessionToken, session, userEventType as UserEventType == UserEventType.Created as UserEventType];
     }
 
-    async getUserOnSession(authInfo: SessionToken, auth0Profile: Auth0Profile): Promise<Session> {
+    async getUserOnSession(sessionToken: SessionToken, auth0Profile: Auth0Profile): Promise<Session> {
         const userIdHash = auth0Profile.getUserIdHash();
 
         // Lookup id hash in database
@@ -413,7 +413,7 @@ export class Repository {
         const dbSessions = await this._conn('identity.session')
             .select(Repository._sessionFields)
             .where('state', SessionState.ActiveAndLinkedWithUser)
-            .andWhere('id', authInfo.sessionId)
+            .andWhere('id', sessionToken.sessionId)
             .limit(1);
 
         if (dbSessions.length == 0) {
@@ -429,7 +429,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession, dbUser, auth0Profile);
     }
 
-    async getUsersInfo(_authInfo: SessionToken, ids: number[]): Promise<PublicUser[]> {
+    async getUsersInfo(_sessionToken: SessionToken, ids: number[]): Promise<PublicUser[]> {
         if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
             throw new RepositoryError(`Can't retrieve ${ids.length} users`);
         }
