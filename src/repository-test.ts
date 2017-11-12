@@ -1,12 +1,35 @@
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import * as knex from 'knex'
 import 'mocha'
 
+import { SessionState, Session } from '@base63/identity-sdk-js'
+import { SessionToken } from '@base63/identity-sdk-js/session-token'
 import { startupMigration } from '@base63/common-server-js'
 
 import * as config from './config'
 import { Repository } from './repository'
 
+import { Marshaller, MarshalFrom } from 'raynor'
+
+use((chai: any, _utils: any): any => {
+    chai.Assertion.addMethod('raynor', function(this: typeof chai, marshaller: Marshaller<any>): void {
+        try {
+            marshaller.extract(this._obj);
+            this.assert(true, 'expected #{this} to be parsable by ' + ((marshaller.constructor as any).name));
+        } catch (e) {
+            this.assert(false, 'expected #{this} to be parsable by ' + ((marshaller.constructor as any).name) + ' but got ' + e.toString());
+        }
+    });
+});
+
+
+declare global {
+    export namespace Chai {
+        interface Assertion {
+            raynor(marshaller: Marshaller<any>): void;
+        }
+    }
+}
 
 describe('Repository', () => {
     let conn: knex|null;
@@ -50,9 +73,20 @@ describe('Repository', () => {
             const repository = new Repository(conn as knex);
             const [sessionToken, session, created] = await repository.getOrCreateSession(null, rightNow);
 
-            expect(created).to.be.true;
+            // Look at the return values
             expect(sessionToken).is.not.null;
-            expect(session).is.not.null;
+            expect(sessionToken).raynor(new (MarshalFrom(SessionToken))());
+            expect(sessionToken.userToken).is.null;
+            expect(session).raynor(new (MarshalFrom(Session))());
+            expect(session.state).is.eql(SessionState.Active);
+            expect(session.agreedToCookiePolicy).to.be.false;
+            expect(session.user).to.be.null;
+            expect(session.timeCreated.getTime()).to.be.gte(rightNow.getTime());
+            expect(session.timeLastUpdated).to.eql(session.timeCreated);
+            expect(session.hasUser()).to.be.false;
+            expect(created).to.be.true;
+
+            // Look at the state of the database
         });
 
         // it('should reuse an already existing token', async () => {
