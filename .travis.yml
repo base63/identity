@@ -7,14 +7,17 @@ cache:
   directories:
     - node_modules
 
+services:
+  - postgresql
+
 env:
   global:
   - ENV=TEST
   - ADDRESS=0.0.0.0
   - PORT=10000
-  - DATABASE_URL=null
-  - DATABASE_MIGRATIONS_DIR=null
-  - DATABASE_MIGRATIONS_TABLE=null
+  - DATABASE_URL=postgresql://postgres@localhost/base63
+  - DATABASE_MIGRATIONS_DIR=./migrations
+  - DATABASE_MIGRATIONS_TABLE=migrations_identity
   - PGSSLMODE=require
   - SECRET_PATH=null
   - ORIGIN=null
@@ -30,6 +33,9 @@ env:
 
 install:
 - npm install --registry=https://npm-proxy.fury.io/${GEMFURY_API_KEY}/${GEMFURY_USER}/ --progress=false
+
+before_script:
+- psql -C 'create database base63;' -U postgres
 
 script:
 - npm run test
