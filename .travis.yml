@@ -35,7 +35,7 @@ install:
 - npm install --registry=https://npm-proxy.fury.io/${GEMFURY_API_KEY}/${GEMFURY_USER}/ --progress=false
 
 before_script:
-- psql -C 'create database base63;' -U postgres
+- psql -c 'create database base63;' -U postgres
 
 script:
 - npm run test
