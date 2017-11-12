@@ -1,6 +1,8 @@
 import { expect, use } from 'chai'
 import * as knex from 'knex'
 import 'mocha'
+import { MarshalFrom } from 'raynor'
+import { raynorChai } from 'raynor-chai'
 
 import { SessionState, Session } from '@base63/identity-sdk-js'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
@@ -9,27 +11,9 @@ import { startupMigration } from '@base63/common-server-js'
 import * as config from './config'
 import { Repository } from './repository'
 
-import { Marshaller, MarshalFrom } from 'raynor'
 
-use((chai: any, _utils: any): any => {
-    chai.Assertion.addMethod('raynor', function(this: typeof chai, marshaller: Marshaller<any>): void {
-        try {
-            marshaller.extract(this._obj);
-            this.assert(true, 'expected #{this} to be parsable by ' + ((marshaller.constructor as any).name));
-        } catch (e) {
-            this.assert(false, 'expected #{this} to be parsable by ' + ((marshaller.constructor as any).name) + ' but got ' + e.toString());
-        }
-    });
-});
+use(raynorChai);
 
-
-declare global {
-    export namespace Chai {
-        interface Assertion {
-            raynor(marshaller: Marshaller<any>): void;
-        }
-    }
-}
 
 describe('Repository', () => {
     let conn: knex|null;
