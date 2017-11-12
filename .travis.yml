@@ -10,6 +10,9 @@ cache:
 services:
   - postgresql
 
+addons:
+  postgresql: "9.6"
+
 env:
   global:
   - ENV=TEST
