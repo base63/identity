@@ -1,4 +1,5 @@
 import { expect, use } from 'chai'
+import * as chaiAsPromised from 'chai-as-promised'
 import * as knex from 'knex'
 import 'mocha'
 import { MarshalFrom } from 'raynor'
@@ -15,6 +16,7 @@ import { Repository } from './repository'
 
 
 use(raynorChai);
+use(chaiAsPromised);
 
 
 describe('Repository', () => {
@@ -145,6 +147,26 @@ describe('Repository', () => {
             expect(sessions).to.have.length(2);
             const sessionEvents = await theConn('identity.session_event').select();
             expect(sessionEvents).to.have.length(2);
+        });
+    });
+
+    describe('get Session', () => {
+        it('should return an existing session', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const retrievedSession = await repository.getSession(sessionToken);
+
+            // Look at the return values.
+            expect(retrievedSession).is.not.null;
+            expect(retrievedSession).to.eql(session);
+        });
+
+        it('should throw when the session is missing', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const badSessionToken = new SessionToken(uuid());
+            expect(repository.getSession(badSessionToken)).to.eventually.throw('Session does not exist');
         });
     });
 });
