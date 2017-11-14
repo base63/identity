@@ -33,9 +33,9 @@ describe('Repository', () => {
             connection: config.DATABASE_URL,
             pool: {
                 min: 0,
-                max: 1
+                max: 10
             },
-            acquireConnectionTimeout: 100
+            acquireConnectionTimeout: 1000
         });
     });
 
@@ -150,7 +150,7 @@ describe('Repository', () => {
         });
     });
 
-    describe('get Session', () => {
+    describe('getSession', () => {
         it('should return an existing session', async () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
@@ -167,6 +167,60 @@ describe('Repository', () => {
             const repository = new Repository(theConn);
             const badSessionToken = new SessionToken(uuid());
             expect(repository.getSession(badSessionToken)).to.eventually.throw('Session does not exist');
+        });
+    });
+
+    describe('expireSession', () => {
+        it('should archive an existing session', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            await repository.expireSession(sessionToken, rightNow, session.xsrfToken);
+
+            // Read from the db and check that everything's OK.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(0);
+            const userEvents = await theConn('identity.user_event').select();
+            expect(userEvents).to.have.length(0);
+            const sessions = await theConn('identity.session').select();
+            expect(sessions).to.have.length(1);
+            expect(sessions[0]).to.have.keys("id", "state", "xsrf_token", "agreed_to_cookie_policy", "user_id", "time_created", "time_last_updated", "time_removed");
+            expect(sessions[0].id).to.be.eql(sessionToken.sessionId);
+            expect(sessions[0].state).to.be.eql(SessionState.Removed);
+            expect(sessions[0].agreed_to_cookie_policy).to.be.false;
+            expect(sessions[0].user_id).to.be.null;
+            expect(new Date(sessions[0].time_created)).to.be.eql(session.timeCreated);
+            expect(new Date(sessions[0].time_last_updated)).to.be.eql(session.timeLastUpdated);
+            expect(new Date(sessions[0].time_removed)).to.be.eql(rightNow);
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
+            expect(sessionEvents).to.have.length(2);
+            expect(sessionEvents[0]).to.have.keys("id", "type", "timestamp", "data", "session_id");
+            expect(sessionEvents[0].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[0].timestamp).to.eql(session.timeCreated);
+            expect(sessionEvents[0].data).to.be.null;
+            expect(sessionEvents[0].session_id).to.eql(sessionToken.sessionId);
+            expect(sessionEvents[1]).to.have.keys("id", "type", "timestamp", "data", "session_id");
+            expect(sessionEvents[1].type).to.eql(SessionEventType.Removed);
+            expect(sessionEvents[1].timestamp).to.eql(rightNow);
+            expect(sessionEvents[1].data).to.be.null;
+            expect(sessionEvents[1].session_id).to.eql(sessionToken.sessionId);
+
+            // The session should not be retrievable.
+            expect(repository.getSession(sessionToken)).to.eventually.throw('Session does not exist');
+        });
+
+        it('should throw when the session is missing', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const badSessionToken = new SessionToken(uuid());
+            expect(repository.expireSession(badSessionToken, rightNow, 'A BAD TOKEN')).to.eventually.throw('Session does not exist');
+        });
+
+        it('should throw when the XSRF token is bad', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken] = await repository.getOrCreateSession(null, rightNow);
+            expect(repository.expireSession(sessionToken, rightNow, 'A BAD TOKEN')).to.eventually.throw('XSRF tokens do not match');
         });
     });
 });
