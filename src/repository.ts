@@ -106,6 +106,8 @@ export class Repository {
                 // If we can't retrieve it we need to create a new session.
                 if (dbSessions.length == 0) {
                     needToCreateSession = true;
+                } else {
+                    dbSession = dbSessions[0];
                 }
             }
 
