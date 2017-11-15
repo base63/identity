@@ -146,6 +146,32 @@ describe('Repository', () => {
             const sessionEvents = await theConn('identity.session_event').select();
             expect(sessionEvents).to.have.length(2);
         });
+
+        it('should create a new session when the one it is supplied has been removed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionToken, session, created] = await repository.getOrCreateSession(null, rightNow);
+            await repository.expireSession(sessionToken, rightNow, session.xsrfToken);
+            const [newSessionToken, newSession, newCreated] = await repository.getOrCreateSession(sessionToken, rightNow);
+
+            // Look at the return values.
+            expect(created).to.be.true;
+            expect(newSessionToken).is.not.null;
+            expect(newSessionToken).is.not.eql(sessionToken);
+            expect(newSession).is.not.eql(session);
+            expect(newCreated).is.true;
+
+            // Look at the state of the database. Just cursory.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(0);
+            const userEvents = await theConn('identity.user_event').select();
+            expect(userEvents).to.have.length(0);
+            const sessions = await theConn('identity.session').select();
+            expect(sessions).to.have.length(2);
+            const sessionEvents = await theConn('identity.session_event').select();
+            expect(sessionEvents).to.have.length(3);
+        });
     });
 
     describe('getSession', () => {
