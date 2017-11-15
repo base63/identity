@@ -1,5 +1,4 @@
 import { expect, use } from 'chai'
-import * as chaiAsPromised from 'chai-as-promised'
 import * as knex from 'knex'
 import 'mocha'
 import { MarshalFrom } from 'raynor'
@@ -16,7 +15,6 @@ import { Repository } from './repository'
 
 
 use(raynorChai);
-use(chaiAsPromised);
 
 
 describe('Repository', () => {
@@ -166,7 +164,12 @@ describe('Repository', () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
             const badSessionToken = new SessionToken(uuid());
-            expect(repository.getSession(badSessionToken)).to.eventually.throw('Session does not exist');
+            try {
+                await repository.getSession(badSessionToken);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
         });
     });
 
@@ -206,21 +209,36 @@ describe('Repository', () => {
             expect(sessionEvents[1].session_id).to.eql(sessionToken.sessionId);
 
             // The session should not be retrievable.
-            expect(repository.getSession(sessionToken)).to.eventually.throw('Session does not exist');
+            try {
+                await repository.getSession(sessionToken);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
         });
 
         it('should throw when the session is missing', async () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
             const badSessionToken = new SessionToken(uuid());
-            expect(repository.expireSession(badSessionToken, rightNow, 'A BAD TOKEN')).to.eventually.throw('Session does not exist');
+            try {
+                await repository.expireSession(badSessionToken, rightNow, 'A BAD TOKEN');
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
         });
 
         it('should throw when the XSRF token is bad', async () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
             const [sessionToken] = await repository.getOrCreateSession(null, rightNow);
-            expect(repository.expireSession(sessionToken, rightNow, 'A BAD TOKEN')).to.eventually.throw('XSRF tokens do not match');
+            try {
+                await repository.expireSession(sessionToken, rightNow, 'A BAD TOKEN');
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('XSRF tokens do not match');
+            }
         });
     });
 });
