@@ -133,7 +133,7 @@ export function newApp(
         }
 
         try {
-            await repository.expireSession(currentSessionToken, req.requestTime, xsrfToken);
+            await repository.removeSession(currentSessionToken, req.requestTime, xsrfToken);
 
             res.status(HttpStatus.NO_CONTENT);
             res.end();

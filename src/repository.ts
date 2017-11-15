@@ -163,7 +163,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
-    async expireSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
+    async removeSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
         await this._conn.transaction(async (trx) => {
             const dbSessions = await trx
                 .from('identity.session')
@@ -377,7 +377,7 @@ export class Repository {
         });
 
         const session = new Session();
-        session.state = SessionState.Active;
+        session.state = SessionState.ActiveAndLinkedWithUser;
         session.xsrfToken = dbSession['session_xsrf_token'];
         session.agreedToCookiePolicy = dbSession['session_agreed_to_cookie_policy'];
         session.user = new PrivateUser();
