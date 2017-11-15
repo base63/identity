@@ -6,7 +6,7 @@ import { raynorChai } from 'raynor-chai'
 import * as uuid from 'uuid'
 
 import { PrivateUser, Role, SessionState, Session, UserState } from '@base63/identity-sdk-js'
-import { SessionEventType } from '@base63/identity-sdk-js/events'
+import { SessionEventType, UserEventType } from '@base63/identity-sdk-js/events'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
 import { startupMigration } from '@base63/common-server-js'
 
@@ -76,6 +76,8 @@ describe('Repository', () => {
     auth0Profile.userId = 'x0bjohn';
     auth0Profile.language = 'en';
 
+    const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
+
     before('setup database', () => {
         startupMigration();
     });
@@ -130,19 +132,19 @@ describe('Repository', () => {
             // Look at the state of the database
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(1);
             expect(sessions[0]).to.have.keys("id", "state", "xsrf_token", "agreed_to_cookie_policy", "user_id", "time_created", "time_last_updated", "time_removed");
             expect(sessions[0].id).to.be.eql(sessionToken.sessionId);
-            expect(sessions[0].state).to.be.eql(session.state);
+            expect(sessions[0].state).to.be.eql(SessionState.Active);
             expect(sessions[0].agreed_to_cookie_policy).to.be.false;
             expect(sessions[0].user_id).to.be.null;
             expect(sessions[0].time_created).to.be.eql(rightNow);
             expect(sessions[0].time_last_updated).to.be.eql(rightNow);
             expect(sessions[0].time_removed).to.be.null;
-            const sessionEvents = await theConn('identity.session_event').select();
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
             expect(sessionEvents).to.have.length(1);
             expect(sessionEvents[0]).to.have.keys("id", "type", "timestamp", "data", "session_id");
             expect(sessionEvents[0].type).to.eql(SessionEventType.Created);
@@ -166,11 +168,11 @@ describe('Repository', () => {
             // Look at the state of the database. Just cursory.
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(1);
-            const sessionEvents = await theConn('identity.session_event').select();
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
             expect(sessionEvents).to.have.length(1);
         });
 
@@ -191,11 +193,11 @@ describe('Repository', () => {
             // Look at the state of the database. Just cursory.
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(2);
-            const sessionEvents = await theConn('identity.session_event').select();
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
             expect(sessionEvents).to.have.length(2);
         });
 
@@ -216,11 +218,11 @@ describe('Repository', () => {
             // Look at the state of the database. Just cursory.
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(2);
-            const sessionEvents = await theConn('identity.session_event').select();
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
             expect(sessionEvents).to.have.length(3);
         });
     });
@@ -272,7 +274,7 @@ describe('Repository', () => {
             // Read from the db and check that everything's OK.
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(1);
@@ -363,7 +365,7 @@ describe('Repository', () => {
             // Read from the db and check that everything's OK.
             const users = await theConn('identity.user').select();
             expect(users).to.have.length(0);
-            const userEvents = await theConn('identity.user_event').select();
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
             expect(userEvents).to.have.length(0);
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(1);
@@ -467,9 +469,52 @@ describe('Repository', () => {
             expect((newSession.user as PrivateUser).agreedToCookiePolicy).to.be.false;
             expect((newSession.user as PrivateUser).userIdHash).to.eql(auth0Profile.getUserIdHash());
             expect(newSession.hasUser()).to.be.true;
-            expect(newCreated).to.be.false;
+            expect(newCreated).to.be.true;
 
             // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+            expect(users[0]).to.have.keys(
+                'id', 'state', 'role', 'agreed_to_cookie_policy', 'provider_user_id', 'provider_user_id_hash',
+                'provider_profile', 'time_created', 'time_last_updated', 'time_removed');
+            expect(users[0].state).to.eql(UserState.Active);
+            expect(users[0].role).to.eql(Role.Regular);
+            expect(users[0].agreed_to_cookie_policy).to.be.false;
+            expect(users[0].provider_user_id).to.eql(auth0Profile.userId);
+            expect(users[0].provider_user_id_hash).to.eql(auth0Profile.getUserIdHash());
+            expect(users[0].provider_profile).to.eql(auth0ProfileMarshaller.pack(auth0Profile));
+            expect(users[0].time_created).to.eql(rightLater);
+            expect(users[0].time_last_updated).to.eql(rightLater);
+            expect(users[0].time_removed).to.be.null;
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            console.log(userEvents);
+            expect(userEvents).to.have.length(1);
+            expect(userEvents[0].type).to.eql(UserEventType.Created);
+            expect(userEvents[0].timestamp).to.eql(rightLater);
+            expect(userEvents[0].data).to.be.null;
+            expect(userEvents[0].user_id).to.eql(users[0].id);
+            const sessions = await theConn('identity.session').select();
+            expect(sessions).to.have.length(1);
+            expect(sessions[0]).to.have.keys("id", "state", "xsrf_token", "agreed_to_cookie_policy", "user_id", "time_created", "time_last_updated", "time_removed");
+            expect(sessions[0].id).to.be.eql(sessionToken.sessionId);
+            expect(sessions[0].state).to.be.eql(SessionState.ActiveAndLinkedWithUser);
+            expect(sessions[0].agreed_to_cookie_policy).to.be.false;
+            expect(sessions[0].user_id).to.eql(users[0].id);
+            expect(sessions[0].time_created).to.be.eql(rightNow);
+            expect(sessions[0].time_last_updated).to.be.eql(rightLater);
+            expect(sessions[0].time_removed).to.be.null;
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
+            expect(sessionEvents).to.have.length(2);
+            expect(sessionEvents[0]).to.have.keys("id", "type", "timestamp", "data", "session_id");
+            expect(sessionEvents[0].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[0].timestamp).to.eql(rightNow);
+            expect(sessionEvents[0].data).to.be.null;
+            expect(sessionEvents[0].session_id).to.eql(sessionToken.sessionId);
+            expect(sessionEvents[1]).to.have.keys("id", "type", "timestamp", "data", "session_id");
+            expect(sessionEvents[1].type).to.eql(SessionEventType.LinkedWithUser);
+            expect(sessionEvents[1].timestamp).to.eql(rightLater);
+            expect(sessionEvents[1].data).to.be.null;
+            expect(sessionEvents[1].session_id).to.eql(sessionToken.sessionId);
         });
 
         it('something about cookie policy being true', async () => {

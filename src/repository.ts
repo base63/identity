@@ -295,7 +295,7 @@ export class Repository {
                         state=${UserState.Active},
                         agreed_to_cookie_policy = identity.user.agreed_to_cookie_policy OR excluded.agreed_to_cookie_policy,
                         provider_profile = excluded.provider_profile
-                    returning id, time_created, agreed_to_cookie_policy`,
+                    returning id, time_created, time_last_updated, agreed_to_cookie_policy`,
                 [UserState.Active, Role.Regular, dbSession['session_agreed_to_cookie_policy'], userId, userIdHash, this._auth0ProfileMarshaller.pack(auth0Profile), requestTime, requestTime]);
 
             dbUserId = rawResponse.rows[0]['id'];
@@ -306,7 +306,7 @@ export class Repository {
                 throw new SessionNotFoundError('Session associated with another user already');
             }
 
-            userEventType = rawResponse.rows[0]['time_created'] == rawResponse.rows[0]['time_last_updated']
+            userEventType = rawResponse.rows[0]['time_created'].getTime() == rawResponse.rows[0]['time_last_updated'].getTime()
                 ? UserEventType.Created
                 : UserEventType.Recreated;
 
