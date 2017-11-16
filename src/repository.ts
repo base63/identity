@@ -328,7 +328,10 @@ export class Repository {
                         'data': null,
                         'user_id': dbUserId
                     });
-            } else if (userEventType == UserEventType.Recreated && dbSession['session_agreed_to_cookie_policy'] == true && dbUserAgreedToCookiePolicy == false) {
+            }
+
+            /*! istanbul ignore if */
+            if (userEventType == UserEventType.Recreated && dbSession['session_agreed_to_cookie_policy'] == true && dbUserAgreedToCookiePolicy == false) {
                 throw new Error('Invalid state');
             }
 

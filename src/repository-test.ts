@@ -83,6 +83,12 @@ describe('Repository', () => {
     auth0ProfileJohnnyDoe.userId = 'x0bjohn';
     auth0ProfileJohnnyDoe.language = 'en';
 
+    const auth0ProfileJaneDoe: Auth0Profile = new Auth0Profile();
+    auth0ProfileJaneDoe.name = 'Jane Doe';
+    auth0ProfileJaneDoe.picture = 'https://example.com/picture-jane.jpg';
+    auth0ProfileJaneDoe.userId = 'x0bjane';
+    auth0ProfileJaneDoe.language = 'en';
+
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
 
     before('setup database', () => {
@@ -564,6 +570,31 @@ describe('Repository', () => {
             } catch (e) {
                 expect(e.message).to.eql('XSRF tokens do not match');
             }
+        });
+
+        it('should throw when the session is already associated with a user', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionTokenJohn2, sessionJohn2] = await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+            const [sessionTokenJane1, sessionJane1] = await repository.getOrCreateSession(null, rightLater);
+            const [sessionTokenJane2, sessionJane2] = await repository.getOrCreateUserOnSession(sessionTokenJane1, auth0ProfileJaneDoe, rightEvenLater, sessionJane1.xsrfToken);
+
+            try {
+                await repository.getOrCreateUserOnSession(sessionTokenJohn2, auth0ProfileJaneDoe, rightTooLate, sessionJohn2.xsrfToken);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session associated with another user already');
+            }
+
+            try {
+                await repository.getOrCreateUserOnSession(sessionTokenJane2, auth0ProfileJohnDoe, rightTooLate, sessionJane2.xsrfToken);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session associated with another user already');
+            }
+
         });
 
         it('should recreate a user which already exists with new info', async () => {
