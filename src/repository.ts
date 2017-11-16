@@ -368,7 +368,7 @@ export class Repository {
         session.user.agreedToCookiePolicy = dbUserAgreedToCookiePolicy;
         session.user.userIdHash = userIdHash;
         session.timeCreated = dbSession['session_time_created'];
-        session.timeLastUpdated = dbSession['session_time_last_updated'];
+        session.timeLastUpdated = dbSession['session_user_id'] == null ? requestTime : dbSession['session_time_last_updated'];
 
         return [sessionToken, session, userEventType as UserEventType == UserEventType.Created as UserEventType];
     }

@@ -251,6 +251,20 @@ describe('Repository', () => {
             expect(retrievedSession).to.eql(session);
         });
 
+        it('should differentiate between two sessions', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken1, session1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionToken2, session2] = await repository.getOrCreateSession(null, rightNow);
+
+            const retrievedSession1 = await repository.getSession(sessionToken1);
+            const retrievedSession2 = await repository.getSession(sessionToken2);
+
+            expect(retrievedSession1).to.eql(session1);
+            expect(retrievedSession2).to.eql(session2);
+            expect(retrievedSession1).to.not.eql(retrievedSession2);
+        });
+
         it('should throw when the session is missing', async () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
@@ -482,6 +496,8 @@ describe('Repository', () => {
             expect((newSession.user as PrivateUser).agreedToCookiePolicy).to.be.false;
             expect((newSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnDoe.getUserIdHash());
             expect(newSession.hasUser()).to.be.true;
+            expect(newSession.timeCreated).to.eql(rightNow);
+            expect(newSession.timeLastUpdated).to.eql(rightLater);
             expect(newCreated).to.be.true;
 
             // Look at the state of the database.
@@ -622,6 +638,8 @@ describe('Repository', () => {
             expect((lastSession.user as PrivateUser).userIdHash).to.eql((newSession.user as PrivateUser).userIdHash);
             expect((lastSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnnyDoe.getUserIdHash());
             expect(lastSession.hasUser()).to.be.true;
+            expect(lastSession.timeCreated).to.eql(rightNow);
+            expect(lastSession.timeLastUpdated).to.eql(rightLater);
             expect(lastCreated).to.be.false;
 
             // Look at the state of the database.
@@ -797,5 +815,44 @@ describe('Repository', () => {
             expect(sessionEvents[4].type).to.eql(SessionEventType.LinkedWithUser);
             expect(sessionEvents[4].session_id).to.eql(sessions[1].id);
         });
+    });
+
+    describe('getUserOnSession', () => {
+        it('should return an existing user', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken1, session1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionToken2, session2] = await repository.getOrCreateUserOnSession(sessionToken1, auth0ProfileJohnDoe, rightLater, session1.xsrfToken);
+
+            const retrievedSession = await repository.getUserOnSession(sessionToken2, auth0ProfileJohnDoe);
+
+            expect(retrievedSession).to.eql(session2);
+        });
+
+        it('should return an existing user and integrate new name', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken1, session1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionToken2, session2] = await repository.getOrCreateUserOnSession(sessionToken1, auth0ProfileJohnDoe, rightLater, session1.xsrfToken);
+
+            const retrievedSession = await repository.getUserOnSession(sessionToken2, auth0ProfileJohnnyDoe);
+
+            expect(retrievedSession.user).to.be.raynor(new (MarshalFrom(PrivateUser))());
+            expect((retrievedSession.user as PrivateUser).state).to.eql(UserState.Active);
+            expect((retrievedSession.user as PrivateUser).role).to.eql(Role.Regular);
+            expect((retrievedSession.user as PrivateUser).name).to.eql(auth0ProfileJohnnyDoe.name);
+            expect((retrievedSession.user as PrivateUser).pictureUri).to.eql(auth0ProfileJohnnyDoe.picture);
+            expect((retrievedSession.user as PrivateUser).language).to.eql(auth0ProfileJohnnyDoe.language);
+            expect((retrievedSession.user as PrivateUser).timeCreated).to.eql(rightLater);
+            expect((retrievedSession.user as PrivateUser).timeLastUpdated).to.eql(rightLater);
+            expect((retrievedSession.user as PrivateUser).isAdmin()).to.be.false;
+            expect((retrievedSession.user as PrivateUser).agreedToCookiePolicy).to.be.false;
+            expect((retrievedSession.user as PrivateUser).userIdHash).to.eql((session2.user as PrivateUser).userIdHash);
+            expect((retrievedSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnnyDoe.getUserIdHash());
+        });
+
+        // it('should differentiate between two users', async () => {
+
+        // });
     });
 });
