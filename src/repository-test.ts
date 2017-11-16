@@ -65,16 +65,23 @@ describe('UserNotFoundError', () => {
 
 
 describe('Repository', () => {
-    let conn: knex|null;
+    let conn: knex | null;
     const rightNow: Date = new Date(Date.now());
     const rightLater: Date = new Date(Date.now() + 3600);
-    // const rightEvenLater: Date = new Date(Date.now() + 7200);
+    const rightEvenLater: Date = new Date(Date.now() + 7200);
+    const rightTooLate: Date = new Date(Date.now() + 10000);
 
-    const auth0Profile: Auth0Profile = new Auth0Profile();
-    auth0Profile.name = 'John Doe';
-    auth0Profile.picture = 'https://example.com/picture.jpg';
-    auth0Profile.userId = 'x0bjohn';
-    auth0Profile.language = 'en';
+    const auth0ProfileJohnDoe: Auth0Profile = new Auth0Profile();
+    auth0ProfileJohnDoe.name = 'John Doe';
+    auth0ProfileJohnDoe.picture = 'https://example.com/picture.jpg';
+    auth0ProfileJohnDoe.userId = 'x0bjohn';
+    auth0ProfileJohnDoe.language = 'en';
+
+    const auth0ProfileJohnnyDoe: Auth0Profile = new Auth0Profile();
+    auth0ProfileJohnnyDoe.name = 'Johnny Doe';
+    auth0ProfileJohnnyDoe.picture = 'https://example.com/picture.jpg';
+    auth0ProfileJohnnyDoe.userId = 'x0bjohn';
+    auth0ProfileJohnnyDoe.language = 'en';
 
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
 
@@ -450,7 +457,7 @@ describe('Repository', () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
             const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
-            const [newSessionToken, newSession, newCreated] = await repository.getOrCreateUserOnSession(sessionToken, auth0Profile, rightLater, session.xsrfToken);
+            const [newSessionToken, newSession, newCreated] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
 
             // Look at the return values.
             expect(newSessionToken).to.eql(sessionToken);
@@ -460,14 +467,14 @@ describe('Repository', () => {
             expect(newSession.user).to.be.raynor(new (MarshalFrom(PrivateUser))());
             expect((newSession.user as PrivateUser).state).to.eql(UserState.Active);
             expect((newSession.user as PrivateUser).role).to.eql(Role.Regular);
-            expect((newSession.user as PrivateUser).name).to.eql(auth0Profile.name);
-            expect((newSession.user as PrivateUser).pictureUri).to.eql(auth0Profile.picture);
-            expect((newSession.user as PrivateUser).language).to.eql(auth0Profile.language);
+            expect((newSession.user as PrivateUser).name).to.eql(auth0ProfileJohnDoe.name);
+            expect((newSession.user as PrivateUser).pictureUri).to.eql(auth0ProfileJohnDoe.picture);
+            expect((newSession.user as PrivateUser).language).to.eql(auth0ProfileJohnDoe.language);
             expect((newSession.user as PrivateUser).timeCreated).to.eql(rightLater);
             expect((newSession.user as PrivateUser).timeLastUpdated).to.eql(rightLater);
             expect((newSession.user as PrivateUser).isAdmin()).to.be.false;
             expect((newSession.user as PrivateUser).agreedToCookiePolicy).to.be.false;
-            expect((newSession.user as PrivateUser).userIdHash).to.eql(auth0Profile.getUserIdHash());
+            expect((newSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnDoe.getUserIdHash());
             expect(newSession.hasUser()).to.be.true;
             expect(newCreated).to.be.true;
 
@@ -480,19 +487,20 @@ describe('Repository', () => {
             expect(users[0].state).to.eql(UserState.Active);
             expect(users[0].role).to.eql(Role.Regular);
             expect(users[0].agreed_to_cookie_policy).to.be.false;
-            expect(users[0].provider_user_id).to.eql(auth0Profile.userId);
-            expect(users[0].provider_user_id_hash).to.eql(auth0Profile.getUserIdHash());
-            expect(users[0].provider_profile).to.eql(auth0ProfileMarshaller.pack(auth0Profile));
+            expect(users[0].provider_user_id).to.eql(auth0ProfileJohnDoe.userId);
+            expect(users[0].provider_user_id_hash).to.eql(auth0ProfileJohnDoe.getUserIdHash());
+            expect(users[0].provider_profile).to.eql(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe));
             expect(users[0].time_created).to.eql(rightLater);
             expect(users[0].time_last_updated).to.eql(rightLater);
             expect(users[0].time_removed).to.be.null;
+
             const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
-            console.log(userEvents);
             expect(userEvents).to.have.length(1);
             expect(userEvents[0].type).to.eql(UserEventType.Created);
             expect(userEvents[0].timestamp).to.eql(rightLater);
             expect(userEvents[0].data).to.be.null;
             expect(userEvents[0].user_id).to.eql(users[0].id);
+
             const sessions = await theConn('identity.session').select();
             expect(sessions).to.have.length(1);
             expect(sessions[0]).to.have.keys("id", "state", "xsrf_token", "agreed_to_cookie_policy", "user_id", "time_created", "time_last_updated", "time_removed");
@@ -503,6 +511,7 @@ describe('Repository', () => {
             expect(sessions[0].time_created).to.be.eql(rightNow);
             expect(sessions[0].time_last_updated).to.be.eql(rightLater);
             expect(sessions[0].time_removed).to.be.null;
+
             const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
             expect(sessionEvents).to.have.length(2);
             expect(sessionEvents[0]).to.have.keys("id", "type", "timestamp", "data", "session_id");
@@ -517,7 +526,245 @@ describe('Repository', () => {
             expect(sessionEvents[1].session_id).to.eql(sessionToken.sessionId);
         });
 
-        it('something about cookie policy being true', async () => {
+        it('should throw when the session is missing', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const badSessionToken = new SessionToken(uuid());
+
+            try {
+                await repository.getOrCreateUserOnSession(badSessionToken, auth0ProfileJohnDoe, rightNow, 'A BAD TOKEN');
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
+
+        it('should throw when the session has been removed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            await repository.removeSession(sessionToken, rightLater, session.xsrfToken);
+
+            try {
+                await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
+
+        it('should throw when the XSRF token is bad', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken] = await repository.getOrCreateSession(null, rightNow);
+
+            try {
+                await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, 'A BAD TOKEN');
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('XSRF tokens do not match');
+            }
+        });
+
+        it('should recreate a user which already exists with new info', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const [newSessionToken, newSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+            const [lastSessionToken, lastSession, lastCreated] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnnyDoe, rightEvenLater, session.xsrfToken);
+
+            // Look at the return values.
+            expect(newSessionToken).to.eql(sessionToken);
+            expect(lastSessionToken).to.eql(sessionToken);
+            expect(lastSession.state).is.eql(SessionState.ActiveAndLinkedWithUser);
+            expect(lastSession.agreedToCookiePolicy).to.be.false;
+            expect(lastSession.user).to.be.raynor(new (MarshalFrom(PrivateUser))());
+            expect((lastSession.user as PrivateUser).state).to.eql(UserState.Active);
+            expect((lastSession.user as PrivateUser).role).to.eql(Role.Regular);
+            expect((lastSession.user as PrivateUser).name).to.eql(auth0ProfileJohnnyDoe.name);
+            expect((lastSession.user as PrivateUser).pictureUri).to.eql(auth0ProfileJohnnyDoe.picture);
+            expect((lastSession.user as PrivateUser).language).to.eql(auth0ProfileJohnnyDoe.language);
+            expect((lastSession.user as PrivateUser).timeCreated).to.eql(rightLater);
+            expect((lastSession.user as PrivateUser).timeLastUpdated).to.eql(rightEvenLater);
+            expect((lastSession.user as PrivateUser).isAdmin()).to.be.false;
+            expect((lastSession.user as PrivateUser).agreedToCookiePolicy).to.be.false;
+            expect((lastSession.user as PrivateUser).userIdHash).to.eql((newSession.user as PrivateUser).userIdHash);
+            expect((lastSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnnyDoe.getUserIdHash());
+            expect(lastSession.hasUser()).to.be.true;
+            expect(lastCreated).to.be.false;
+
+            // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+            expect(users[0].provider_profile).to.eql(auth0ProfileMarshaller.pack(auth0ProfileJohnnyDoe));
+
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            expect(userEvents).to.have.length(2);
+
+            expect(userEvents[1].type).to.eql(UserEventType.Recreated);
+            expect(userEvents[1].timestamp).to.eql(rightEvenLater);
+            expect(userEvents[1].data).to.be.null;
+            expect(userEvents[1].user_id).to.eql(users[0].id);
+
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
+            expect(sessionEvents).to.have.length(2);
+        });
+
+        it('should agree to the cookie policy if creating and the session had agreed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            await repository.agreeToCookiePolicyForSession(sessionToken, rightNow, session.xsrfToken);
+            const [newSessionToken, newSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightEvenLater, session.xsrfToken);
+
+            // Look at the return values.
+            expect(newSessionToken).to.eql(sessionToken);
+            expect(newSession.agreedToCookiePolicy).to.be.true;
+
+            // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+            expect(users[0].agreed_to_cookie_policy).to.be.true;
+
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            expect(userEvents).to.have.length(2);
+
+            expect(userEvents[1].type).to.eql(UserEventType.AgreedToCookiePolicy);
+            expect(userEvents[1].timestamp).to.eql(rightEvenLater);
+            expect(userEvents[1].data).to.be.null;
+            expect(userEvents[1].user_id).to.eql(users[0].id);
+        });
+
+        it('should agree to the cookie policy if recreating and the session had agreed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const [newSessionToken, newSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+            await repository.agreeToCookiePolicyForSession(sessionToken, rightEvenLater, session.xsrfToken);
+            const [lastSessionToken, lastSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnnyDoe, rightTooLate, session.xsrfToken);
+
+            // Look at the return values.
+            expect(newSessionToken).to.eql(sessionToken);
+            expect(lastSessionToken).to.eql(sessionToken);
+            expect(newSession.agreedToCookiePolicy).to.be.false;
+            expect(lastSession.agreedToCookiePolicy).to.be.true;
+            expect(lastSession.timeLastUpdated).to.eql(rightEvenLater);
+            expect((lastSession.user as PrivateUser).timeLastUpdated).to.eql(rightTooLate);
+
+            // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+            expect(users[0].agreed_to_cookie_policy).to.be.true;
+
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            expect(userEvents).to.have.length(3);
+
+            expect(userEvents[1].type).to.eql(UserEventType.AgreedToCookiePolicy);
+            expect(userEvents[1].timestamp).to.eql(rightEvenLater);
+            expect(userEvents[1].data).to.be.null;
+            expect(userEvents[1].user_id).to.eql(users[0].id);
+
+            expect(userEvents[2].type).to.eql(UserEventType.Recreated);
+            expect(userEvents[2].timestamp).to.eql(rightTooLate);
+            expect(userEvents[2].data).to.be.null;
+            expect(userEvents[2].user_id).to.eql(users[0].id);
+        });
+
+        it('should associate another session with the same user if the userId matches', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken1, session1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionToken2, session2] = await repository.getOrCreateSession(null, rightLater);
+
+            const [newSessionToken1, newSession1, newCreated1] = await repository.getOrCreateUserOnSession(sessionToken1, auth0ProfileJohnDoe, rightEvenLater, session1.xsrfToken);
+            const [newSessionToken2, newSession2, newCreated2] = await repository.getOrCreateUserOnSession(sessionToken2, auth0ProfileJohnDoe, rightTooLate, session2.xsrfToken);
+
+            // Look at the return values.
+            expect(newSessionToken2).to.not.eql(newSessionToken1);
+            expect((newSession1.user as PrivateUser).id).to.eql((newSession2.user as PrivateUser).id);
+            expect(newCreated1).to.be.true;
+            expect(newCreated2).to.be.false;
+
+            // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            expect(userEvents).to.have.length(2);
+
+            expect(userEvents[1].type).to.eql(UserEventType.Recreated);
+            expect(userEvents[1].timestamp).to.eql(rightTooLate);
+            expect(userEvents[1].data).to.be.null;
+            expect(userEvents[1].user_id).to.eql(users[0].id);
+
+            const sessions = await theConn('identity.session').select();
+            expect(sessions).to.have.length(2);
+            expect(sessions[0].user_id).to.eql(users[0].id);
+            expect(sessions[1].user_id).to.eql(users[0].id);
+
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
+            expect(sessionEvents).to.have.length(4);
+            expect(sessionEvents[0].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[0].session_id).to.eql(sessions[0].id);
+            expect(sessionEvents[1].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[1].session_id).to.eql(sessions[1].id);
+            expect(sessionEvents[2].type).to.eql(SessionEventType.LinkedWithUser);
+            expect(sessionEvents[2].session_id).to.eql(sessions[0].id);
+            expect(sessionEvents[3].type).to.eql(SessionEventType.LinkedWithUser);
+            expect(sessionEvents[3].session_id).to.eql(sessions[1].id);
+        });
+
+        it('should not make the session agree to the cookie policy if the user had agreed previously', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken1, session1] = await repository.getOrCreateSession(null, rightNow);
+            const [newSessionToken1] = await repository.getOrCreateUserOnSession(sessionToken1, auth0ProfileJohnDoe, rightLater, session1.xsrfToken);
+            await repository.agreeToCookiePolicyForSession(sessionToken1, rightLater, session1.xsrfToken);
+
+            const [sessionToken2, session2] = await repository.getOrCreateSession(null, rightEvenLater);
+            const [newSessionToken2, newSession2, newCreated2] = await repository.getOrCreateUserOnSession(sessionToken2, auth0ProfileJohnDoe, rightTooLate, session2.xsrfToken);
+
+            // Look at the return values.
+            expect(newSessionToken2).to.not.eql(newSessionToken1);
+            expect(newSession2.agreedToCookiePolicy).is.false;
+            expect((newSession2.user as PrivateUser).agreedToCookiePolicy).is.true;
+            expect(newCreated2).to.be.false;
+
+            // Look at the state of the database.
+            const users = await theConn('identity.user').select();
+            expect(users).to.have.length(1);
+
+            const userEvents = await theConn('identity.user_event').select().orderBy('timestamp', 'asc');
+            expect(userEvents).to.have.length(3);
+
+            expect(userEvents[1].type).to.eql(UserEventType.AgreedToCookiePolicy);
+            expect(userEvents[1].timestamp).to.eql(rightLater);
+            expect(userEvents[1].data).to.be.null;
+            expect(userEvents[1].user_id).to.eql(users[0].id);
+
+            expect(userEvents[2].type).to.eql(UserEventType.Recreated);
+            expect(userEvents[2].timestamp).to.eql(rightTooLate);
+            expect(userEvents[2].data).to.be.null;
+            expect(userEvents[2].user_id).to.eql(users[0].id);
+
+            const sessions = await theConn('identity.session').select();
+            expect(sessions).to.have.length(2);
+            expect(sessions[0].user_id).to.eql(users[0].id);
+            expect(sessions[1].user_id).to.eql(users[0].id);
+
+            const sessionEvents = await theConn('identity.session_event').select().orderBy('timestamp', 'asc');
+            expect(sessionEvents).to.have.length(5);
+            expect(sessionEvents[0].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[0].session_id).to.eql(sessions[0].id);
+            expect(sessionEvents[1].type).to.eql(SessionEventType.LinkedWithUser);
+            expect(sessionEvents[1].session_id).to.eql(sessions[0].id);
+            expect(sessionEvents[2].type).to.eql(SessionEventType.AgreedToCookiePolicy);
+            expect(sessionEvents[2].session_id).to.eql(sessions[0].id);
+
+            expect(sessionEvents[3].type).to.eql(SessionEventType.Created);
+            expect(sessionEvents[3].session_id).to.eql(sessions[1].id);
+            expect(sessionEvents[4].type).to.eql(SessionEventType.LinkedWithUser);
+            expect(sessionEvents[4].session_id).to.eql(sessions[1].id);
         });
     });
 });

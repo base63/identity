@@ -328,19 +328,8 @@ export class Repository {
                         'data': null,
                         'user_id': dbUserId
                     });
-            } else if (userEventType == UserEventType.Recreated && dbUserAgreedToCookiePolicy == true) {
-                const hasEventRaw = await trx.raw(`select count(*) as has_event from identity.user_event where user_id=? and type=${UserEventType.AgreedToCookiePolicy}`, [dbUserId]);
-
-                if (hasEventRaw.rows[0]['has_event'] == 0) {
-                    await trx
-                        .from('identity.user_event')
-                        .insert({
-                            'type': UserEventType.AgreedToCookiePolicy,
-                            'timestamp': requestTime,
-                            'data': null,
-                            'user_id': dbUserId
-                        });
-                }
+            } else if (userEventType == UserEventType.Recreated && dbSession['session_agreed_to_cookie_policy'] == true && dbUserAgreedToCookiePolicy == false) {
+                throw new Error('Invalid state');
             }
 
             if (dbSession['session_user_id'] == null) {
@@ -362,17 +351,6 @@ export class Repository {
                         'data': null,
                         'session_id': dbSession['session_id']
                     });
-
-                if (dbUserAgreedToCookiePolicy != dbSession['session_agreed_to_cookie_policy']) {
-                    await trx
-                        .from('identity.session_event')
-                        .insert({
-                            'type': SessionEventType.AgreedToCookiePolicy,
-                            'timestamp': requestTime,
-                            'data': null,
-                            'session_id': sessionToken.sessionId
-                        });
-                }
             }
         });
 
