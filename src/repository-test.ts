@@ -851,8 +851,120 @@ describe('Repository', () => {
             expect((retrievedSession.user as PrivateUser).userIdHash).to.eql(auth0ProfileJohnnyDoe.getUserIdHash());
         });
 
-        // it('should differentiate between two users', async () => {
+        it('should differentiate between two users', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
 
-        // });
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionTokenJohn2, sessionJohn2] = await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+            const [sessionTokenJane1, sessionJane1] = await repository.getOrCreateSession(null, rightLater);
+            const [sessionTokenJane2, sessionJane2] = await repository.getOrCreateUserOnSession(sessionTokenJane1, auth0ProfileJaneDoe, rightEvenLater, sessionJane1.xsrfToken);
+
+            const retrievedJohn = await repository.getUserOnSession(sessionTokenJohn2, auth0ProfileJohnDoe);
+            const retrievedJane = await repository.getUserOnSession(sessionTokenJane2, auth0ProfileJaneDoe);
+
+            expect(retrievedJohn).to.eql(sessionJohn2);
+            expect(retrievedJane).to.eql(sessionJane2);
+        });
+
+        it('should throw when the user is missing', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const badSessionToken = new SessionToken(uuid());
+
+            try {
+                await repository.getUserOnSession(badSessionToken, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('User does not exist');
+            }
+        });
+
+        it('should throw when the user has been removed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionTokenJohn2, sessionJohn2] = await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+
+            // Hacky way to go about this.
+            await theConn('identity.user').update({ state: UserState.Removed }).where({ id: (sessionJohn2.user as PrivateUser).id });
+
+            try {
+                await repository.getUserOnSession(sessionTokenJohn2, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('User does not exist');
+            }
+        });
+
+        it('should throw when the session is missing', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+
+            const badSessionToken = new SessionToken(uuid());
+
+            try {
+                await repository.getUserOnSession(badSessionToken, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
+
+        it('should throw when the session has been removed', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionTokenJohn2] = await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+
+            await repository.removeSession(sessionTokenJohn1, rightLater, sessionJohn1.xsrfToken);
+
+            try {
+                await repository.getUserOnSession(sessionTokenJohn2, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
+
+        it('should throw when the session is not marked as linked', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            const [sessionTokenJohn2] = await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+
+            // Hacky way to go about this.
+            await theConn('identity.session').update({ state: SessionState.Active }).where({ id: (sessionTokenJohn1.sessionId) });
+
+            try {
+                await repository.getUserOnSession(sessionTokenJohn2, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
+
+        it('should throw when the session is not linked with the user', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
+            await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
+            const [sessionTokenJane] = await repository.getOrCreateSession(null, rightEvenLater);
+
+            try {
+                await repository.getUserOnSession(sessionTokenJane, auth0ProfileJohnDoe);
+                expect(false).to.be.true;
+            } catch (e) {
+                expect(e.message).to.eql('Session does not exist');
+            }
+        });
     });
 });
