@@ -5,7 +5,7 @@ import { MarshalFrom } from 'raynor'
 import { raynorChai } from 'raynor-chai'
 import * as uuid from 'uuid'
 
-import { PrivateUser, Role, SessionState, Session, UserState } from '@base63/identity-sdk-js'
+import { PrivateUser, PublicUser, Role, SessionState, Session, UserState } from '@base63/identity-sdk-js'
 import { SessionEventType, UserEventType } from '@base63/identity-sdk-js/events'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
 import { startupMigration } from '@base63/common-server-js'
@@ -955,15 +955,133 @@ describe('Repository', () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);
 
-            const [sessionTokenJohn1, sessionJohn1] = await repository.getOrCreateSession(null, rightNow);
-            await repository.getOrCreateUserOnSession(sessionTokenJohn1, auth0ProfileJohnDoe, rightLater, sessionJohn1.xsrfToken);
-            const [sessionTokenJane] = await repository.getOrCreateSession(null, rightEvenLater);
+            const [sessionTokenJohn, sessionJohn] = await repository.getOrCreateSession(null, rightNow);
+            await repository.getOrCreateUserOnSession(sessionTokenJohn, auth0ProfileJohnDoe, rightLater, sessionJohn.xsrfToken);
+            const [sessionTokenJane, sessionJane] = await repository.getOrCreateSession(null, rightEvenLater);
+            await repository.getOrCreateUserOnSession(sessionTokenJane, auth0ProfileJaneDoe, rightTooLate, sessionJane.xsrfToken);
 
             try {
                 await repository.getUserOnSession(sessionTokenJane, auth0ProfileJohnDoe);
                 expect(false).to.be.true;
             } catch (e) {
-                expect(e.message).to.eql('Session does not exist');
+                expect(e.message).to.eql('Session and user do not match');
+            }
+        });
+    });
+
+    describe('getUsersInfo', () => {
+        it('should return one user', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const [, newSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+
+            const users = await repository.getUsersInfo([(newSession.user as PrivateUser).id]);
+
+            expect(users).to.have.length(1);
+            expect(users[0]).to.be.raynor(new (MarshalFrom(PublicUser))());
+            expect(users[0].id).to.eql((newSession.user as PrivateUser).id);
+            expect(users[0].state).to.eql(UserState.Active);
+            expect(users[0].role).to.eql(Role.Regular);
+            expect(users[0].name).to.eql(auth0ProfileJohnDoe.name);
+            expect(users[0].pictureUri).to.eql(auth0ProfileJohnDoe.picture);
+            expect(users[0].language).to.eql(auth0ProfileJohnDoe.language);
+            expect(users[0].timeCreated).to.eql(rightLater);
+            expect(users[0].timeLastUpdated).to.eql(rightLater);
+        });
+
+        it('should return two users', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn, sessionJohn] = await repository.getOrCreateSession(null, rightNow);
+            const [, newSessionJohn] = await repository.getOrCreateUserOnSession(sessionTokenJohn, auth0ProfileJohnDoe, rightLater, sessionJohn.xsrfToken);
+
+            const [sessionTokenJane, sessionJane] = await repository.getOrCreateSession(null, rightEvenLater);
+            const [, newSessionJane] = await repository.getOrCreateUserOnSession(sessionTokenJane, auth0ProfileJaneDoe, rightTooLate, sessionJane.xsrfToken);
+
+            const users = await repository.getUsersInfo([(newSessionJohn.user as PrivateUser).id, (newSessionJane.user as PrivateUser).id]);
+
+            expect(users).to.have.length(2);
+            expect(users[0]).to.be.raynor(new (MarshalFrom(PublicUser))());
+            expect(users[0].id).to.eql((newSessionJohn.user as PrivateUser).id);
+            expect(users[0].state).to.eql(UserState.Active);
+            expect(users[0].role).to.eql(Role.Regular);
+            expect(users[0].name).to.eql(auth0ProfileJohnDoe.name);
+            expect(users[0].pictureUri).to.eql(auth0ProfileJohnDoe.picture);
+            expect(users[0].language).to.eql(auth0ProfileJohnDoe.language);
+            expect(users[0].timeCreated).to.eql(rightLater);
+            expect(users[0].timeLastUpdated).to.eql(rightLater);
+            expect(users[1]).to.be.raynor(new (MarshalFrom(PublicUser))());
+            expect(users[1].id).to.eql((newSessionJane.user as PrivateUser).id);
+            expect(users[1].state).to.eql(UserState.Active);
+            expect(users[1].role).to.eql(Role.Regular);
+            expect(users[1].name).to.eql(auth0ProfileJaneDoe.name);
+            expect(users[1].pictureUri).to.eql(auth0ProfileJaneDoe.picture);
+            expect(users[1].language).to.eql(auth0ProfileJaneDoe.language);
+            expect(users[1].timeCreated).to.eql(rightTooLate);
+            expect(users[1].timeLastUpdated).to.eql(rightTooLate);
+        });
+
+        it('should skip over an inactive user', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn, sessionJohn] = await repository.getOrCreateSession(null, rightNow);
+            const [, newSessionJohn] = await repository.getOrCreateUserOnSession(sessionTokenJohn, auth0ProfileJohnDoe, rightLater, sessionJohn.xsrfToken);
+
+            const [sessionTokenJane, sessionJane] = await repository.getOrCreateSession(null, rightEvenLater);
+            const [, newSessionJane] = await repository.getOrCreateUserOnSession(sessionTokenJane, auth0ProfileJaneDoe, rightTooLate, sessionJane.xsrfToken);
+
+            await theConn('identity.user').update({ state: UserState.Removed }).where({ id: (newSessionJohn.user as PrivateUser).id });
+
+            const users = await repository.getUsersInfo([(newSessionJane.user as PrivateUser).id]);
+
+            expect(users).to.have.length(1);
+            expect(users[0]).to.be.raynor(new (MarshalFrom(PublicUser))());
+            expect(users[0].id).to.eql((newSessionJane.user as PrivateUser).id);
+            expect(users[0].state).to.eql(UserState.Active);
+            expect(users[0].role).to.eql(Role.Regular);
+            expect(users[0].name).to.eql(auth0ProfileJaneDoe.name);
+            expect(users[0].pictureUri).to.eql(auth0ProfileJaneDoe.picture);
+            expect(users[0].language).to.eql(auth0ProfileJaneDoe.language);
+            expect(users[0].timeCreated).to.eql(rightTooLate);
+            expect(users[0].timeLastUpdated).to.eql(rightTooLate);
+        });
+
+        it('should throw when there are too many users to retrieve', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            try {
+                await repository.getUsersInfo([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
+                expect(true).to.be.false;
+            } catch (e) {
+                expect(e.message).to.eql('Can\'t retrieve 21 users');
+            }
+        });
+
+        it('should throw when not enough users are retrieved', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            const [sessionTokenJohn, sessionJohn] = await repository.getOrCreateSession(null, rightNow);
+            const [, newSessionJohn] = await repository.getOrCreateUserOnSession(sessionTokenJohn, auth0ProfileJohnDoe, rightLater, sessionJohn.xsrfToken);
+
+            const [sessionTokenJane, sessionJane] = await repository.getOrCreateSession(null, rightEvenLater);
+            const [, newSessionJane] = await repository.getOrCreateUserOnSession(sessionTokenJane, auth0ProfileJaneDoe, rightTooLate, sessionJane.xsrfToken);
+
+            await theConn('identity.user').update({ state: UserState.Removed }).where({ id: (newSessionJohn.user as PrivateUser).id });
+
+            const id1 = (newSessionJohn.user as PrivateUser).id;
+            const id2 = (newSessionJane.user as PrivateUser).id;
+
+            try {
+                await repository.getUsersInfo([id1, id2]);
+                expect(true).to.be.false;
+            } catch (e) {
+                expect(e.message).to.eql(`Looking for ids [${id1},${id2}] but got [${id2}]`);
             }
         });
     });

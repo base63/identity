@@ -30,9 +30,9 @@ export interface AppConfig {
     env: Env;
     name: string;
     clients: string[];
-    logglyToken: string|null;
-    logglySubdomain: string|null;
-    rollbarToken: string|null;
+    logglyToken: string | null;
+    logglySubdomain: string | null;
+    rollbarToken: string | null;
 }
 
 
@@ -209,7 +209,7 @@ export function newApp(
         }
     }));
 
-    app.post('/user',wrap(async (req: Request, res: express.Response) => {
+    app.post('/user', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -370,7 +370,7 @@ export function newApp(
         }
 
         try {
-            const usersInfo = await repository.getUsersInfo(currentSessionToken, ids);
+            const usersInfo = await repository.getUsersInfo(ids);
             const usersInfoResponse = new UsersInfoResponse();
             usersInfoResponse.usersInfo = usersInfo;
 

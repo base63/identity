@@ -407,7 +407,7 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession, dbUser, auth0Profile);
     }
 
-    async getUsersInfo(_sessionToken: SessionToken, ids: number[]): Promise<PublicUser[]> {
+    async getUsersInfo(ids: number[]): Promise<PublicUser[]> {
         if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
             throw new RepositoryError(`Can't retrieve ${ids.length} users`);
         }
