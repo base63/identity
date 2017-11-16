@@ -330,11 +330,6 @@ export class Repository {
                     });
             }
 
-            /*! istanbul ignore if */
-            if (userEventType == UserEventType.Recreated && dbSession['session_agreed_to_cookie_policy'] == true && dbUserAgreedToCookiePolicy == false) {
-                throw new Error('Invalid state');
-            }
-
             if (dbSession['session_user_id'] == null) {
                 await trx
                     .from('identity.session')
