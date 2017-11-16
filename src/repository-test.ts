@@ -459,17 +459,32 @@ describe('Repository', () => {
             }
         });
 
-        // it('should change the user session agreement to true', async () => {
-        //     const theConn = conn as knex;
-        //     const repository = new Repository(theConn);
-        //     const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
-        //     const [newSessionToken, newSession, newCreated] = await repository.getOrCreateUserOnSession(sessionToken, auth0Profile, rightLater, session.xsrfToken);
-        //     const lastSession = await repository.agreeToCookiePolicyForSession(sessionToken, rightEvenLater, session.xsrfToken);
-        // });
+        it('should change the user session agreement to true', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const [newSessionToken] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+            await repository.agreeToCookiePolicyForSession(sessionToken, rightEvenLater, session.xsrfToken);
+            const lastSession = await repository.getUserOnSession(newSessionToken, auth0ProfileJohnDoe);
 
-        // it('should throw when the user cannot be found', async () => {
-        //     expect(true).to.be.false;
-        // });
+            expect((lastSession.user as PrivateUser).agreedToCookiePolicy).to.be.true;
+        });
+
+        it('should throw when the user cannot be found', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+            const [sessionToken, session] = await repository.getOrCreateSession(null, rightNow);
+            const [newSessionToken, newSession] = await repository.getOrCreateUserOnSession(sessionToken, auth0ProfileJohnDoe, rightLater, session.xsrfToken);
+
+            await theConn('identity.user').update({ state: UserState.Removed }).where({ id: (newSession.user as PrivateUser).id });
+
+            try {
+                await repository.agreeToCookiePolicyForSession(newSessionToken, rightEvenLater, newSession.xsrfToken);
+                expect(true).to.be.false;
+            } catch (e) {
+                expect(e.message).to.eql('User does not exist');
+            }
+        });
     });
 
     describe('getOrCreateUserOnSession', () => {
