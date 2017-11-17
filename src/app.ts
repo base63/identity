@@ -13,6 +13,12 @@ import {
     newLocalCommonServerMiddleware,
     Request
 } from '@base63/common-server-js'
+import { XsrfTokenMarshaller } from '@base63/identity-sdk-js/entities'
+import {
+    SESSION_TOKEN_COOKIE_NAME,
+    SESSION_TOKEN_HEADER_NAME,
+    XSRF_TOKEN_HEADER_NAME
+} from '@base63/identity-sdk-js/client'
 import {
     SessionAndTokenResponse,
     SessionResponse,
@@ -40,6 +46,8 @@ export function newApp(
     config: AppConfig,
     auth0Client: auth0.AuthenticationClient,
     repository: Repository): express.Express {
+    const sessionTokenMarshaller = new (MarshalFrom(SessionToken))();
+    const xsrfTokenMarshaller = new XsrfTokenMarshaller();
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
     const sessionAndTokenResponseMarshaller = new (MarshalFrom(SessionAndTokenResponse))();
     const sessionResponseMarshaller = new (MarshalFrom(SessionResponse))();
@@ -391,12 +399,31 @@ export function newApp(
         }
     }));
 
-    function extractSessionToken(_req: Request): SessionToken | null {
-        return null;
+    function extractSessionToken(req: Request): SessionToken | null {
+        let sessionTokenSerialized: string | null = null;
+
+        if (req.cookies[SESSION_TOKEN_COOKIE_NAME] != undefined) {
+            sessionTokenSerialized = req.cookies[SESSION_TOKEN_COOKIE_NAME];
+        } else if (req.header(SESSION_TOKEN_HEADER_NAME) != undefined) {
+            sessionTokenSerialized = req.header(SESSION_TOKEN_HEADER_NAME) as string;
+        } else {
+            return null;
+        }
+
+        try {
+            return sessionTokenMarshaller.extract(sessionTokenSerialized);
+        } catch (e) {
+            return null;
+        }
     }
 
-    function extractXsrfToken(_req: Request): string | null {
-        return null;
+    function extractXsrfToken(req: Request): string | null {
+        try {
+            const xsrfTokenRaw = req.header(XSRF_TOKEN_HEADER_NAME);
+            return xsrfTokenMarshaller.extract(xsrfTokenRaw);
+        } catch (e) {
+            return null;
+        }
     }
 
     return app;

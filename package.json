@@ -63,6 +63,7 @@
     "nodemon": "=1.12.0",
     "raynor-chai": "=0.1.1",
     "remap-istanbul": "=0.9.5",
+    "testdouble": "=3.2.6",
     "typedoc": "=0.9.0",
     "typescript": "=2.5.3"
   }
