@@ -33,6 +33,14 @@ describe('App', () => {
     const sessionTokenMarshaller = new (MarshalFrom(SessionToken))();
     const sessionAndTokenResponseMarshaller = new (MarshalFrom(SessionAndTokenResponse))();
 
+    const theSessionToken = new SessionToken(uuid());
+    const theSession =  new Session();
+    theSession.state = SessionState.Active;
+    theSession.xsrfToken = ('0' as any).repeat(64);
+    theSession.agreedToCookiePolicy = false;
+    theSession.timeCreated = rightNow;
+    theSession.timeLastUpdated = rightNow;
+
     it('can be constructed', () => {
         const auth0Client = td.object({});
         const repository = td.object({});
@@ -52,15 +60,7 @@ describe('App', () => {
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
-            const sessionToken = new SessionToken(uuid());
-            const session = new Session();
-            session.state = SessionState.Active;
-            session.xsrfToken = ('0' as any).repeat(64);
-            session.agreedToCookiePolicy = false;
-            session.timeCreated = rightNow;
-            session.timeLastUpdated = rightNow;
-
-            td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenReturn([sessionToken, session, true]);
+            td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, true]);
 
             await appAgent
                 .post('/session')
@@ -69,8 +69,32 @@ describe('App', () => {
                 .expect(HttpStatus.CREATED)
                 .then(response => {
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
-                    expect(result.sessionToken).to.eql(sessionToken);
-                    expect(result.session).to.eql(session);
+                    expect(result.sessionToken).to.eql(theSessionToken);
+                    expect(result.session).to.eql(theSession);
+                });
+        });
+
+        it('should return a newly created session when is bad session information', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({
+                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
+            });
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, true]);
+
+            await appAgent
+                .post('/session')
+                .set(SESSION_TOKEN_HEADER_NAME, 'bad data here')
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.CREATED)
+                .then(response => {
+                    const result = sessionAndTokenResponseMarshaller.extract(response.body);
+                    expect(result.sessionToken).to.eql(theSessionToken);
+                    expect(result.session).to.eql(theSession);
                 });
         });
 
@@ -83,26 +107,18 @@ describe('App', () => {
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
-            const sessionToken = new SessionToken(uuid());
-            const session = new Session();
-            session.state = SessionState.Active;
-            session.xsrfToken = ('0' as any).repeat(64);
-            session.agreedToCookiePolicy = false;
-            session.timeCreated = rightNow;
-            session.timeLastUpdated = rightNow;
-
-            td.when(repository.getOrCreateSession(sessionToken, td.matchers.isA(Date))).thenReturn([sessionToken, session, false]);
+            td.when(repository.getOrCreateSession(theSessionToken, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, false]);
 
             await appAgent
                 .post('/session')
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(sessionToken))}`)
+                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
                 .set('Origin', 'core')
                 .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
                 .then(response => {
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
-                    expect(result.sessionToken).to.eql(sessionToken);
-                    expect(result.session).to.eql(session);
+                    expect(result.sessionToken).to.eql(theSessionToken);
+                    expect(result.session).to.eql(theSession);
                 });
         });
 
@@ -115,26 +131,18 @@ describe('App', () => {
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
-            const sessionToken = new SessionToken(uuid());
-            const session = new Session();
-            session.state = SessionState.Active;
-            session.xsrfToken = ('0' as any).repeat(64);
-            session.agreedToCookiePolicy = false;
-            session.timeCreated = rightNow;
-            session.timeLastUpdated = rightNow;
-
-            td.when(repository.getOrCreateSession(sessionToken, td.matchers.isA(Date))).thenReturn([sessionToken, session, false]);
+            td.when(repository.getOrCreateSession(theSessionToken, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, false]);
 
             await appAgent
                 .post('/session')
-                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(sessionToken)))
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set('Origin', 'core')
                 .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
                 .then(response => {
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
-                    expect(result.sessionToken).to.eql(sessionToken);
-                    expect(result.session).to.eql(session);
+                    expect(result.sessionToken).to.eql(theSessionToken);
+                    expect(result.session).to.eql(theSession);
                 });
         });
 

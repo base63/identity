@@ -416,7 +416,6 @@ export function newApp(
         try {
             return sessionTokenMarshaller.extract(JSON.parse(sessionTokenSerialized as string));
         } catch (e) {
-            console.log(e);
             return null;
         }
     }
