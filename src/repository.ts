@@ -115,7 +115,6 @@ export class Repository {
             if (needToCreateSession) {
                 const sessionId = uuid();
                 const xsrfToken = randomBytes(48).toString('base64');
-
                 const dbSessions = await trx
                     .from('identity.session')
                     .returning(Repository._sessionFields)

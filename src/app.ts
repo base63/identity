@@ -1,5 +1,6 @@
 import * as auth0 from 'auth0'
 import { wrap } from 'async-middleware'
+import * as cookieParser from 'cookie-parser'
 import * as compression from 'compression'
 import * as express from 'express'
 import * as HttpStatus from 'http-status-codes'
@@ -36,6 +37,7 @@ export interface AppConfig {
     env: Env;
     name: string;
     clients: string[];
+    forceDisableLogging: boolean;
     logglyToken: string | null;
     logglySubdomain: string | null;
     rollbarToken: string | null;
@@ -57,8 +59,9 @@ export function newApp(
     const app = express();
 
     app.disable('x-powered-by');
+    app.use(cookieParser());
     if (isLocal(config.env)) {
-        app.use(newLocalCommonServerMiddleware(config.name, config.env));
+        app.use(newLocalCommonServerMiddleware(config.name, config.env, config.forceDisableLogging));
     } else {
         app.use(newCommonServerMiddleware(
             config.name,
@@ -76,12 +79,12 @@ export function newApp(
         try {
             const [sessionToken, session, created] = await repository.getOrCreateSession(currentSessionToken, req.requestTime);
 
-            const sessionTokenAndSessionResponse = new SessionAndTokenResponse();
-            sessionTokenAndSessionResponse.sessionToken = sessionToken;
-            sessionTokenAndSessionResponse.session = session;
+            const sessionAndTokenResponse = new SessionAndTokenResponse();
+            sessionAndTokenResponse.sessionToken = sessionToken;
+            sessionAndTokenResponse.session = session;
 
-            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionTokenAndSessionResponse)));
             res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionAndTokenResponse)));
             res.end();
         } catch (e) {
             req.log.error(e);
@@ -411,8 +414,9 @@ export function newApp(
         }
 
         try {
-            return sessionTokenMarshaller.extract(sessionTokenSerialized);
+            return sessionTokenMarshaller.extract(JSON.parse(sessionTokenSerialized as string));
         } catch (e) {
+            console.log(e);
             return null;
         }
     }

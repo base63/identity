@@ -24,6 +24,7 @@ function main() {
         env: config.ENV,
         name: config.NAME,
         clients: config.CLIENTS,
+        forceDisableLogging: false,
         logglyToken: config.LOGGLY_TOKEN,
         logglySubdomain: config.LOGGLY_SUBDOMAIN,
         rollbarToken: config.ROLLBAR_TOKEN
