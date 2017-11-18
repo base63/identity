@@ -4,7 +4,7 @@ import * as HttpStatus from 'http-status-codes'
 import 'mocha'
 import { MarshalFrom } from 'raynor'
 import * as td from 'testdouble'
-import { agent } from 'supertest'
+import { agent, Test } from 'supertest'
 import * as uuid from 'uuid'
 
 import { Env } from '@base63/common-js'
@@ -35,7 +35,7 @@ describe('App', () => {
     const sessionResponseMarshaller = new (MarshalFrom(SessionResponse))();
 
     const theSessionToken = new SessionToken(uuid());
-    const theSession =  new Session();
+    const theSession = new Session();
     theSession.state = SessionState.Active;
     theSession.xsrfToken = ('0' as any).repeat(64);
     theSession.agreedToCookiePolicy = false;
@@ -75,7 +75,7 @@ describe('App', () => {
                 });
         });
 
-        it('should return a newly created session when is bad session information', async () => {
+        it('should return a newly created session with bad session information', async () => {
             const auth0Client = td.object({});
             const repository = td.object({
                 getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
@@ -147,63 +147,9 @@ describe('App', () => {
                 });
         });
 
-        it('should return BAD_REQUEST when there is no origin', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            await appAgent
-                .post('/session')
-                .expect(HttpStatus.BAD_REQUEST)
-                .then(response => {
-                    expect(response.text).to.have.length(0);
-                });
-
-            td.verify(repository.getOrCreateSession(td.matchers.anything(), td.matchers.anything()), { times: 0 });
-        });
-
-        it('should return BAD_REQUEST when the origin is not allowed', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            await appAgent
-                .post('/session')
-                .set('Origin', 'bad-origin')
-                .expect(HttpStatus.BAD_REQUEST)
-                .then(response => {
-                    expect(response.text).to.have.length(0);
-                });
-
-            td.verify(repository.getOrCreateSession(td.matchers.anything(), td.matchers.anything()), { times: 0 });
-        });
-
-        it('should return INTERNAL_SERVER_ERROR when the repository throws', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenThrow(new Error('Something bad happened'));
-
-            await appAgent
-                .post('/session')
-                .set('Origin', 'core')
-                .expect(HttpStatus.INTERNAL_SERVER_ERROR)
-                .then(response => {
-                    expect(response.text).to.have.length(0);
-                });
+        badOrigins('/session', 'post');
+        badRepository('/session', 'post', { getOrCreateSession: (_t: SessionToken | null, _c: Date) => { } }, {
+            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occured'), HttpStatus.INTERNAL_SERVER_ERROR]
         });
     });
 
@@ -254,126 +200,177 @@ describe('App', () => {
                 });
         });
 
+        badOrigins('/session', 'get');
+        badSessionToken('/session', 'get');
+        badRepository('/session', 'get', { getSession: (_t: SessionToken) => { } }, {
+            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occured'), HttpStatus.INTERNAL_SERVER_ERROR]
+        });
+    });
+
+    function badOrigins(uri: string, method: 'post' | 'get') {
         it('should return BAD_REQUEST when there is no origin', async () => {
             const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
+            const repository = td.object({});
 
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
+            let restOfTest;
 
-            await appAgent
-                .get('/session')
+            switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+            }
+
+            await (restOfTest as Test)
                 .expect(HttpStatus.BAD_REQUEST)
                 .then(response => {
-                    expect(response.text).has.length(0);
+                    expect(response.text).to.have.length(0);
                 });
-
-            td.verify(repository.getSession(td.matchers.anything()), { times:0 });
         });
 
         it('should return BAD_REQUEST when the origin is not allowed', async () => {
             const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
+            const repository = td.object({});
 
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
+            let restOfTest;
 
-            await appAgent
-                .get('/session')
-                .set('Origin', 'bad-core')
+            switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+            }
+
+            await (restOfTest as Test)
+                .set('Origin', 'bad-origin')
                 .expect(HttpStatus.BAD_REQUEST)
                 .then(response => {
-                    expect(response.text).has.length(0);
+                    expect(response.text).to.have.length(0);
                 });
-
-            td.verify(repository.getSession(td.matchers.anything()), { times:0 });
         });
+    }
 
+    function badSessionToken(uri: string, method: 'post' | 'get') {
         it('should return BAD_REQUEST when there is no session token', async () => {
             const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
+            const repository = td.object({});
 
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
 
-            await appAgent
-                .get('/session')
+            const appAgent = agent(app);
+            let restOfTest;
+
+            switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+            }
+
+            await (restOfTest as Test)
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
                 .then(response => {
                     expect(response.text).has.length(0);
                 });
-
-            td.verify(repository.getSession(td.matchers.anything()), { times: 0 });
         });
 
         it('should return BAD_REQUEST when the cookie session token is bad', async () => {
             const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
+            const repository = td.object({});
 
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
+            let restOfTest;
 
-            await appAgent
-                .get('/session')
+            switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+            }
+
+            await (restOfTest as Test)
+                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=badtoken`)
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))) // Doesn't matter we have the good one here
+                .set('Origin', 'core')
+                .expect(HttpStatus.BAD_REQUEST)
+                .then(response => {
+                    expect(response.text).has.length(0);
+                });
+        });
+
+        it('should return BAD_REQUEST when the header session token is bad', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({});
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+            let restOfTest;
+
+            switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+            }
+
+            await (restOfTest as Test)
                 .set(SESSION_TOKEN_HEADER_NAME, 'bad token')
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
                 .then(response => {
                     expect(response.text).has.length(0);
                 });
-
-            td.verify(repository.getSession(td.matchers.anything()), { times: 0 });
         });
+    }
 
-        it('should return NOT_FOUND if the session was not found', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
+    function badRepository(uri: string, method: 'post' | 'get', repositoryTemplate: object, cases: Map<string, [Error, number]>) {
+        for (let oneCase of Object.keys(cases)) {
+            const methodName = Object.keys(repositoryTemplate)[0]
+            const [error, statusCode] = (cases as any)[oneCase]; // sigh
+            it(`should return ${oneCase}`, async () => {
+                const auth0Client = td.object({});
+                const repository = td.object(repositoryTemplate);
+
+                const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+                const appAgent = agent(app);
+                let restOfTest;
+
+                switch (method) {
+                    case 'post':
+                        restOfTest = appAgent.post(uri);
+                        break;
+                    case 'get':
+                        restOfTest = appAgent.get(uri);
+                        break;
+                }
+
+                td.when((repository as any)[methodName](), { ignoreExtraArgs: true }).thenThrow(error);
+
+                await (restOfTest as Test)
+                    .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
+                    .set('Origin', 'core')
+                    .expect(statusCode)
+                    .then(response => {
+                        expect(response.text).to.have.length(0);
+                    });
             });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.getSession(theSessionToken)).thenThrow(new SessionNotFoundError('Not found'));
-
-            await appAgent
-                .get('/session')
-                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
-                .set('Origin', 'core')
-                .expect(HttpStatus.NOT_FOUND)
-                .then(response => {
-                    expect(response.text).has.length(0);
-                });
-        });
-
-        it('should return INVALID_SERVER_ERROR if the repository errored', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.getSession(theSessionToken)).thenThrow(new Error('An error occured'));
-
-            await appAgent
-                .get('/session')
-                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
-                .set('Origin', 'core')
-                .expect(HttpStatus.INTERNAL_SERVER_ERROR)
-                .then(response => {
-                    expect(response.text).has.length(0);
-                });
-        });
-    });
+        }
+    }
 });
