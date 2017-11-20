@@ -340,7 +340,6 @@ describe('App', () => {
         badOrigins('/user', 'post');
         badSessionToken('/user', 'post');
         badXsrfToken('/user', 'post');
-
         badAuth0('/user', 'post', {
             'UNAUTHORIZED when the token was not accepted': ['Unauthorized', HttpStatus.UNAUTHORIZED],
             'INTERNAL_SERVER_ERROR when the result could not be parsed': ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]
@@ -348,6 +347,48 @@ describe('App', () => {
         badRepository('/user', 'post', { getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, {
             'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
             'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
+            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
+        });
+    });
+
+    describe('/user GET', () => {
+        it('should return an existing user', async () => {
+            const auth0Client = td.object({
+                getProfile: (_t: string) => { }
+            });
+            const repository = td.object({
+                getUserOnSession: (_t: SessionToken, _a: Auth0Profile) => { }
+            });
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            td.when(auth0Client.getProfile(theSessionTokenWithUser.userToken as string))
+                .thenReturn(JSON.stringify(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe)));
+            td.when(repository.getUserOnSession(theSessionTokenWithUser, auth0ProfileJohnDoe))
+                .thenReturn(theSessionWithUser);
+
+            await appAgent
+                .get('/user')
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.OK)
+                .then(response => {
+                    const result = sessionResponseMarshaller.extract(response.body);
+                    expect(result.session).to.eql(theSessionWithUser);
+                });
+        });
+
+        badOrigins('/user', 'get');
+        badSessionToken('/user', 'get');
+        badAuth0('/user', 'get', {
+            'UNAUTHORIZED when the token was not accepted': ['Unauthorized', HttpStatus.UNAUTHORIZED],
+            'INTERNAL_SERVER_ERROR when the result could not be parsed': ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]
+        });
+        badRepository('/user', 'get', { getUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, {
+            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
             'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
         });
     });

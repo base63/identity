@@ -323,8 +323,8 @@ export function newApp(
             const sessionResponse = new SessionResponse();
             sessionResponse.session = session;
 
+            res.status(HttpStatus.OK);
             res.write(JSON.stringify(sessionResponseMarshaller.pack(sessionResponse)));
-            res.status(HttpStatus.CREATED);
             res.end();
         } catch (e) {
             if (e.name == 'UserNotFoundError') {
