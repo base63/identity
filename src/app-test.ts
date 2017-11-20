@@ -38,6 +38,16 @@ describe('App', () => {
         rollbarToken: null
     };
 
+    const stagingAppConfig: AppConfig = {
+        env: Env.Staging,
+        name: 'identity',
+        clients: ['core'],
+        forceDisableLogging: true,
+        logglyToken: 'A FAKE TOKEN',
+        logglySubdomain: 'a-fake-subdomain',
+        rollbarToken: null
+    };
+
     const rightNow: Date = new Date(Date.now());
 
     const sessionTokenMarshaller = new (MarshalFrom(SessionToken))();
@@ -113,6 +123,15 @@ describe('App', () => {
         const repository = td.object({});
 
         const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+
+        expect(app).is.not.null;
+    });
+
+    it('can be constructed with prod settings', () => {
+        const auth0Client = td.object({});
+        const repository = td.object({});
+
+        const app = newApp(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
         expect(app).is.not.null;
     });
@@ -460,7 +479,7 @@ describe('App', () => {
             '',
             'bad-bad',
             '%5B%5D',
-            '%5B0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%5D']) {
+            '%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%5D']) {
             it(`should return BAD_REQUEST when the bad ids are "${badIds}"`, async () => {
                 const auth0Client = td.object({});
                 const repository = td.object({});
@@ -481,6 +500,7 @@ describe('App', () => {
         }
 
         badOrigins('/users-info?ids=%5B1%2C2%5D', 'get');
+        badSessionToken('/users-info?ids=%5B1%2C2%5D', 'get');
         badRepository('/users-info?ids=%5B1%2C2%5D', 'get', { getUsersInfo: (_ids: number[]) => { } }, {
             'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
             'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
