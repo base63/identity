@@ -1065,6 +1065,18 @@ describe('Repository', () => {
             expect(users[0].timeLastUpdated).to.eql(rightTooLate);
         });
 
+        it('should throw when there are no users to retrieve', async () => {
+            const theConn = conn as knex;
+            const repository = new Repository(theConn);
+
+            try {
+                await repository.getUsersInfo([]);
+                expect(true).to.be.false;
+            } catch (e) {
+                expect(e.message).to.eql('Need to retrieve some users');
+            }
+        });
+
         it('should throw when there are too many users to retrieve', async () => {
             const theConn = conn as knex;
             const repository = new Repository(theConn);

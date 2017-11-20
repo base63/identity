@@ -13,8 +13,8 @@ import {
     SESSION_TOKEN_HEADER_NAME,
     XSRF_TOKEN_HEADER_NAME
 } from '@base63/identity-sdk-js/client'
-import { SessionAndTokenResponse, SessionResponse } from '@base63/identity-sdk-js/dtos'
-import { PrivateUser, Role, Session, SessionState, UserState } from '@base63/identity-sdk-js/entities'
+import { SessionAndTokenResponse, SessionResponse, UsersInfoResponse } from '@base63/identity-sdk-js/dtos'
+import { PrivateUser, PublicUser, Role, Session, SessionState, UserState } from '@base63/identity-sdk-js/entities'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
 
 import { AppConfig, newApp } from './app'
@@ -43,6 +43,7 @@ describe('App', () => {
     const sessionTokenMarshaller = new (MarshalFrom(SessionToken))();
     const sessionAndTokenResponseMarshaller = new (MarshalFrom(SessionAndTokenResponse))();
     const sessionResponseMarshaller = new (MarshalFrom(SessionResponse))();
+    const usersInfoResponseMarshaller = new (MarshalFrom(UsersInfoResponse))();
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
 
     const theSessionToken = new SessionToken(uuid());
@@ -75,10 +76,10 @@ describe('App', () => {
     theSessionWithUser.user.role = Role.Regular;
     theSessionWithUser.user.name = 'John Doe';
     theSessionWithUser.user.pictureUri = 'https://example.com/picture.jpg';
-    theSessionWithUser.user.agreedToCookiePolicy = false;
     theSessionWithUser.user.language = 'en';
     theSessionWithUser.user.timeCreated = rightNow;
     theSessionWithUser.user.timeLastUpdated = rightNow;
+    theSessionWithUser.user.agreedToCookiePolicy = false;
     theSessionWithUser.user.userIdHash = ('f' as any).repeat(64);
 
     const auth0ProfileJohnDoe: Auth0Profile = new Auth0Profile();
@@ -86,6 +87,26 @@ describe('App', () => {
     auth0ProfileJohnDoe.picture = 'https://example.com/picture.jpg';
     auth0ProfileJohnDoe.userId = 'x0bjohn';
     auth0ProfileJohnDoe.language = 'en';
+
+    const userInfoJohnDoe = new PublicUser();
+    userInfoJohnDoe.id = 1;
+    userInfoJohnDoe.state = UserState.Active;
+    userInfoJohnDoe.role = Role.Regular;
+    userInfoJohnDoe.name = 'John Doe';
+    userInfoJohnDoe.pictureUri = 'https://example.com/picture1.jpg';
+    userInfoJohnDoe.language = 'en';
+    userInfoJohnDoe.timeCreated = rightNow;
+    userInfoJohnDoe.timeLastUpdated = rightNow;
+
+    const userInfoJaneDoe = new PublicUser();
+    userInfoJaneDoe.id = 2;
+    userInfoJaneDoe.state = UserState.Active;
+    userInfoJaneDoe.role = Role.Regular;
+    userInfoJaneDoe.name = 'Jane Doe';
+    userInfoJaneDoe.pictureUri = 'https://example.com/picture2.jpg';
+    userInfoJaneDoe.language = 'en';
+    userInfoJaneDoe.timeCreated = rightNow;
+    userInfoJaneDoe.timeLastUpdated = rightNow;
 
     it('can be constructed', () => {
         const auth0Client = td.object({});
@@ -388,6 +409,79 @@ describe('App', () => {
         });
         badRepository('/user', 'get', { getUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, {
             'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
+        });
+    });
+
+    describe('/users-info GET', () => {
+        it('should retrieve requested users', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({
+                getUsersInfo: (_ids: number[]) => { }
+            });
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            td.when(repository.getUsersInfo([1, 2])).thenReturn([userInfoJohnDoe, userInfoJaneDoe]);
+
+            await appAgent
+                .get('/users-info?ids=%5B1%2C2%5D') // ids=[1,2]
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.OK)
+                .then(response => {
+                    const result = usersInfoResponseMarshaller.extract(response.body);
+                    expect(result.usersInfo).to.eql([userInfoJohnDoe, userInfoJaneDoe]);
+                });
+        });
+
+        it('should return BAD_REQUEST when there are no ids', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({});
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            await appAgent
+                .get('/users-info')
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.BAD_REQUEST)
+                .then(response => {
+                    expect(response.text).to.have.length(0);
+                });
+        });
+
+        for (let badIds of [
+            '',
+            'bad-bad',
+            '%5B%5D',
+            '%5B0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%2C0%5D']) {
+            it(`should return BAD_REQUEST when the bad ids are "${badIds}"`, async () => {
+                const auth0Client = td.object({});
+                const repository = td.object({});
+
+                const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+                const appAgent = agent(app);
+
+                await appAgent
+                    .get(`/users-info?ids=${badIds}`)
+                    .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
+                    .set('Origin', 'core')
+                    .expect('Content-Type', 'application/json; charset=utf-8')
+                    .expect(HttpStatus.BAD_REQUEST)
+                    .then(response => {
+                        expect(response.text).to.have.length(0);
+                    });
+            });
+        }
+
+        badOrigins('/users-info?ids=%5B1%2C2%5D', 'get');
+        badRepository('/users-info?ids=%5B1%2C2%5D', 'get', { getUsersInfo: (_ids: number[]) => { } }, {
             'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
             'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
         });

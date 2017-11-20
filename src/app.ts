@@ -372,6 +372,13 @@ export function newApp(
             return;
         }
 
+        if (ids.length == 0) {
+            req.log.warn('Need to return some ids');
+            res.status(HttpStatus.BAD_REQUEST);
+            res.end();
+            return;
+        }
+
         if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
             req.log.warn(`Can't retrieve ${ids.length} users`);
             res.status(HttpStatus.BAD_REQUEST);

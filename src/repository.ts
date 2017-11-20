@@ -407,6 +407,10 @@ export class Repository {
     }
 
     async getUsersInfo(ids: number[]): Promise<PublicUser[]> {
+        if (ids.length == 0) {
+            throw new RepositoryError('Need to retrieve some users');
+        }
+
         if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
             throw new RepositoryError(`Can't retrieve ${ids.length} users`);
         }
