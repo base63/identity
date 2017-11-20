@@ -10,7 +10,6 @@ import * as uuid from 'uuid'
 
 import { Env } from '@base63/common-js'
 import {
-    SESSION_TOKEN_COOKIE_NAME,
     SESSION_TOKEN_HEADER_NAME,
     XSRF_TOKEN_HEADER_NAME
 } from '@base63/identity-sdk-js/client'
@@ -115,31 +114,7 @@ describe('App', () => {
                 });
         });
 
-        it('should return an already existing session when it is attached via a cookie', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.getOrCreateSession(theSessionToken, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, false]);
-
-            await appAgent
-                .post('/session')
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
-                .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
-                .expect(HttpStatus.OK)
-                .then(response => {
-                    const result = sessionAndTokenResponseMarshaller.extract(response.body);
-                    expect(result.sessionToken).to.eql(theSessionToken);
-                    expect(result.session).to.eql(theSession);
-                });
-        });
-
-        it('should return an already existing session when it is attached via the header', async () => {
+        it('should return an already existing session', async () => {
             const auth0Client = td.object({});
             const repository = td.object({
                 getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
@@ -170,30 +145,7 @@ describe('App', () => {
     });
 
     describe('/session GET', () => {
-        it('should return an existing session with the session token in the cookie', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.getSession(theSessionToken)).thenReturn(theSession);
-
-            await appAgent
-                .get('/session')
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
-                .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
-                .expect(HttpStatus.OK)
-                .then(response => {
-                    const result = sessionResponseMarshaller.extract(response.body);
-                    expect(result.session).to.eql(theSession);
-                });
-        });
-
-        it('should return an existing session with the session token in the header', async () => {
+        it('should return an existing session', async () => {
             const auth0Client = td.object({});
             const repository = td.object({
                 getSession: (_t: SessionToken) => { }
@@ -225,30 +177,7 @@ describe('App', () => {
     });
 
     describe('/session DELETE', () => {
-        it('should succeed when the session token is in the cookie', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                removeSession: (_t: SessionToken, _d: Date, _x: string) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.removeSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn();
-
-            await appAgent
-                .delete('/session')
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
-                .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
-                .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
-                .expect(HttpStatus.NO_CONTENT)
-                .then(response => {
-                    expect(response.text).to.have.length(0);
-                });
-        });
-
-        it('should succeed when the session token is in the header', async () => {
+        it('should succeed', async () => {
             const auth0Client = td.object({});
             const repository = td.object({
                 removeSession: (_t: SessionToken, _d: Date, _x: string) => { }
@@ -282,31 +211,7 @@ describe('App', () => {
     });
 
     describe('/session/agree-to-cookie-policy POST', () => {
-        it('should succeed when the session token is in the cookie', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { }
-            });
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
-
-            td.when(repository.agreeToCookiePolicyForSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn(theSessionWithAgreement);
-
-            await appAgent
-                .post('/session/agree-to-cookie-policy')
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
-                .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
-                .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
-                .expect(HttpStatus.OK)
-                .then(response => {
-                    const result = sessionResponseMarshaller.extract(response.body);
-                    expect(result.session).to.eql(theSessionWithAgreement);
-                });
-        });
-
-        it('should succeed when the session token is in the header', async () => {
+        it('should succeed', async () => {
             const auth0Client = td.object({});
             const repository = td.object({
                 agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { }
@@ -403,24 +308,7 @@ describe('App', () => {
                 });
         });
 
-        it('should return BAD_REQUEST when the cookie session token is bad', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
-
-            await restOfTest
-                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=badtoken`)
-                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))) // Doesn't matter we have the good one here
-                .set('Origin', 'core')
-                .expect(HttpStatus.BAD_REQUEST)
-                .then(response => {
-                    expect(response.text).has.length(0);
-                });
-        });
-
-        it('should return BAD_REQUEST when the header session token is bad', async () => {
+        it('should return BAD_REQUEST when the session token is bad', async () => {
             const auth0Client = td.object({});
             const repository = td.object({});
 

@@ -16,7 +16,6 @@ import {
 } from '@base63/common-server-js'
 import { XsrfTokenMarshaller } from '@base63/identity-sdk-js/entities'
 import {
-    SESSION_TOKEN_COOKIE_NAME,
     SESSION_TOKEN_HEADER_NAME,
     XSRF_TOKEN_HEADER_NAME
 } from '@base63/identity-sdk-js/client'
@@ -265,8 +264,8 @@ export function newApp(
             sessionTokenAndSessionResponse.sessionToken = sessionToken;
             sessionTokenAndSessionResponse.session = session;
 
-            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionTokenAndSessionResponse)));
             res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+            res.write(JSON.stringify(sessionAndTokenResponseMarshaller.pack(sessionTokenAndSessionResponse)));
             res.end();
         } catch (e) {
             if (e.name == 'SessionNotFoundError') {
@@ -405,9 +404,7 @@ export function newApp(
     function extractSessionToken(req: Request): SessionToken | null {
         let sessionTokenSerialized: string | null = null;
 
-        if (req.cookies[SESSION_TOKEN_COOKIE_NAME] != undefined) {
-            sessionTokenSerialized = req.cookies[SESSION_TOKEN_COOKIE_NAME];
-        } else if (req.header(SESSION_TOKEN_HEADER_NAME) != undefined) {
+        if (req.header(SESSION_TOKEN_HEADER_NAME) != undefined) {
             sessionTokenSerialized = req.header(SESSION_TOKEN_HEADER_NAME) as string;
         } else {
             return null;
