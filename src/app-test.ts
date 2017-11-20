@@ -19,7 +19,12 @@ import { Session, SessionState } from '@base63/identity-sdk-js/entities'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
 
 import { AppConfig, newApp } from './app'
-import { Repository, SessionNotFoundError, XsrfTokenMismatchError } from './repository'
+import {
+    Repository,
+    SessionNotFoundError,
+    UserNotFoundError,
+    XsrfTokenMismatchError
+} from './repository'
 
 
 describe('App', () => {
@@ -46,6 +51,12 @@ describe('App', () => {
     theSession.agreedToCookiePolicy = false;
     theSession.timeCreated = rightNow;
     theSession.timeLastUpdated = rightNow;
+    const theSessionWithAgreement = new Session();
+    theSessionWithAgreement.state = SessionState.Active;
+    theSessionWithAgreement.xsrfToken = ('0' as any).repeat(64);
+    theSessionWithAgreement.agreedToCookiePolicy = true;
+    theSessionWithAgreement.timeCreated = rightNow;
+    theSessionWithAgreement.timeLastUpdated = rightNow;
 
     it('can be constructed', () => {
         const auth0Client = td.object({});
@@ -265,6 +276,66 @@ describe('App', () => {
         badXsrfToken('/session', 'delete');
         badRepository('/session', 'delete', { removeSession: (_t: SessionToken, _d: Date, _x: string) => { } }, {
             'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
+            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
+        });
+    });
+
+    describe('/session/agree-to-cookie-policy POST', () => {
+        it('should succeed when the session token is in the cookie', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({
+                agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { }
+            });
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            td.when(repository.agreeToCookiePolicyForSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn(theSessionWithAgreement);
+
+            await appAgent
+                .post('/session/agree-to-cookie-policy')
+                .set('Cookie', `${SESSION_TOKEN_COOKIE_NAME}=${JSON.stringify(sessionTokenMarshaller.pack(theSessionToken))}`)
+                .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.OK)
+                .then(response => {
+                    const result = sessionResponseMarshaller.extract(response.body);
+                    expect(result.session).to.eql(theSessionWithAgreement);
+                });
+        });
+
+        it('should succeed when the session token is in the header', async () => {
+            const auth0Client = td.object({});
+            const repository = td.object({
+                agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { }
+            });
+
+            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+            const appAgent = agent(app);
+
+            td.when(repository.agreeToCookiePolicyForSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn(theSessionWithAgreement);
+
+            await appAgent
+                .post('/session/agree-to-cookie-policy')
+                .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
+                .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
+                .set('Origin', 'core')
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect(HttpStatus.OK)
+                .then(response => {
+                    const result = sessionResponseMarshaller.extract(response.body);
+                    expect(result.session).to.eql(theSessionWithAgreement);
+                });
+        });
+
+        badOrigins('/session/agree-to-cookie-policy', 'post');
+        badSessionToken('/session/agree-to-cookie-policy', 'post');
+        badXsrfToken('/session/agree-to-cookie-policy', 'post');
+        badRepository('/session/agree-to-cookie-policy', 'post', { agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { } }, {
+            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
+            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
             'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
             'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
         });

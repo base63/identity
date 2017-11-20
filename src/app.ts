@@ -191,8 +191,8 @@ export function newApp(
             const sessionResponse = new SessionResponse();
             sessionResponse.session = session;
 
-            res.write(JSON.stringify(sessionResponseMarshaller.pack(sessionResponse)));
             res.status(HttpStatus.OK);
+            res.write(JSON.stringify(sessionResponseMarshaller.pack(sessionResponse)));
             res.end();
         } catch (e) {
             if (e.name == 'SessionNotFoundError') {
