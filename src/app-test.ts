@@ -118,19 +118,31 @@ describe('App', () => {
     userInfoJaneDoe.timeCreated = rightNow;
     userInfoJaneDoe.timeLastUpdated = rightNow;
 
-    it('can be constructed', () => {
-        const auth0Client = td.object({});
-        const repository = td.object({});
+    const auth0Client = td.object({
+        getProfile: (_t: string) => { }
+    });
 
+    const repository = td.object({
+        getOrCreateSession: (_t: SessionToken | null, _c: Date) => { },
+        getSession: (_t: SessionToken) => { },
+        removeSession: (_t: SessionToken, _d: Date, _x: string) => { },
+        agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { },
+        getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { },
+        getUserOnSession: (_t: SessionToken, _a: Auth0Profile) => { },
+        getUsersInfo: (_ids: number[]) => { }
+    });
+
+    afterEach('reset test doubles', () => {
+        td.reset();
+    });
+
+    it('can be constructed', () => {
         const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
         expect(app).is.not.null;
     });
 
     it('can be constructed with prod settings', () => {
-        const auth0Client = td.object({});
-        const repository = td.object({});
-
         const app = newApp(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
         expect(app).is.not.null;
@@ -138,11 +150,6 @@ describe('App', () => {
 
     describe('/session POST', () => {
         it('should return the newly created session when there is no session information', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -161,11 +168,6 @@ describe('App', () => {
         });
 
         it('should return a newly created session with bad session information', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -185,11 +187,6 @@ describe('App', () => {
         });
 
         it('should return an already existing session', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getOrCreateSession: (_t: SessionToken | null, _c: Date) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -216,11 +213,6 @@ describe('App', () => {
 
     describe('/session GET', () => {
         it('should return an existing session', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getSession: (_t: SessionToken) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -248,11 +240,6 @@ describe('App', () => {
 
     describe('/session DELETE', () => {
         it('should succeed', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                removeSession: (_t: SessionToken, _d: Date, _x: string) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -282,11 +269,6 @@ describe('App', () => {
 
     describe('/session/agree-to-cookie-policy POST', () => {
         it('should succeed', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -318,13 +300,6 @@ describe('App', () => {
 
     describe('/user POST', () => {
         it('should return a new user when there isn\'t one', async () => {
-            const auth0Client = td.object({
-                getProfile: (_t: string) => { }
-            });
-            const repository = td.object({
-                getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -348,13 +323,6 @@ describe('App', () => {
         });
 
         it('should return an existing user when there is one', async () => {
-            const auth0Client = td.object({
-                getProfile: (_t: string) => { }
-            });
-            const repository = td.object({
-                getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -393,13 +361,6 @@ describe('App', () => {
 
     describe('/user GET', () => {
         it('should return an existing user', async () => {
-            const auth0Client = td.object({
-                getProfile: (_t: string) => { }
-            });
-            const repository = td.object({
-                getUserOnSession: (_t: SessionToken, _a: Auth0Profile) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -435,11 +396,6 @@ describe('App', () => {
 
     describe('/users-info GET', () => {
         it('should retrieve requested users', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({
-                getUsersInfo: (_ids: number[]) => { }
-            });
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -458,9 +414,6 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when there are no ids', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const appAgent = agent(app);
 
@@ -481,9 +434,6 @@ describe('App', () => {
             '%5B%5D',
             '%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%5D']) {
             it(`should return BAD_REQUEST when the bad ids are "${badIds}"`, async () => {
-                const auth0Client = td.object({});
-                const repository = td.object({});
-
                 const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
                 const appAgent = agent(app);
 
@@ -524,9 +474,6 @@ describe('App', () => {
 
     function badOrigins(uri: string, method: Method) {
         it('should return BAD_REQUEST when there is no origin', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -538,9 +485,6 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the origin is not allowed', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -555,9 +499,6 @@ describe('App', () => {
 
     function badSessionToken(uri: string, method: Method) {
         it('should return BAD_REQUEST when there is no session token', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -570,9 +511,6 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the session token is bad', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -588,9 +526,6 @@ describe('App', () => {
 
     function badXsrfToken(uri: string, method: Method) {
         it('should return BAD_REQUEST when the xsrf token is missing', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -604,9 +539,6 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the xsrf token is invalid', async () => {
-            const auth0Client = td.object({});
-            const repository = td.object({});
-
             const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
             const restOfTest = newAgent(app, uri, method);
 
@@ -625,9 +557,6 @@ describe('App', () => {
         for (let oneCase of Object.keys(cases)) {
             const [getProfileResult, statusCode] = (cases as any)[oneCase]; // sigh
             it(`should return ${oneCase}`, async () => {
-                const auth0Client = td.object({
-                    getProfile: (_t: string) => { }
-                });
                 const repository = td.object({});
 
                 const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
@@ -654,9 +583,6 @@ describe('App', () => {
             const methodName = Object.keys(repositoryTemplate)[0]
             const [error, statusCode] = (cases as any)[oneCase]; // sigh
             it(`should return ${oneCase}`, async () => {
-                const auth0Client = td.object({
-                    getProfile: (_t: string) => { }
-                });
                 const repository = td.object(repositoryTemplate);
 
                 const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
