@@ -29,7 +29,7 @@
   "dependencies": {
     "@base63/common-js": "=0.1.2",
     "@base63/common-server-js": "=1.3.0",
-    "@base63/identity-sdk-js": "=0.2.2",
+    "@base63/identity-sdk-js": "=0.4.0",
     "async-middleware": "=1.2.1",
     "auth0": "=2.8.0",
     "compression": "=1.7.1",
