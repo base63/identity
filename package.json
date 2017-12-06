@@ -1,6 +1,6 @@
 {
   "name": "@base63/identity",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The identity service.",
   "author": "Base63 team",
   "scripts": {
