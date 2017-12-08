@@ -43,10 +43,10 @@ export interface AppConfig {
 }
 
 
-export function newApp(
+export function newIdentityRouter(
     config: AppConfig,
     auth0Client: auth0.AuthenticationClient,
-    repository: Repository): express.Express {
+    repository: Repository): express.Router {
     const sessionTokenMarshaller = new (MarshalFrom(SessionToken))();
     const xsrfTokenMarshaller = new XsrfTokenMarshaller();
     const auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
@@ -55,9 +55,8 @@ export function newApp(
     const usersInfoResponseMarshaller = new (MarshalFrom(UsersInfoResponse))();
     const idsMarshaller = new (ArrayOf(r.IdMarshaller))();
 
-    const app = express();
+    const app = express.Router();
 
-    app.disable('x-powered-by');
     app.use(cookieParser());
     if (isLocal(config.env)) {
         app.use(newLocalCommonServerMiddleware(config.name, config.env, config.forceDisableLogging));

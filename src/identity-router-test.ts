@@ -17,8 +17,8 @@ import { SessionAndTokenResponse, SessionResponse, UsersInfoResponse } from '@ba
 import { PrivateUser, PublicUser, Role, Session, SessionState, UserState } from '@base63/identity-sdk-js/entities'
 import { SessionToken } from '@base63/identity-sdk-js/session-token'
 
-import { AppConfig, newApp } from './app'
 import { Auth0Profile } from './auth0-profile'
+import { AppConfig, newIdentityRouter } from './identity-router'
 import {
     Repository,
     SessionNotFoundError,
@@ -137,21 +137,20 @@ describe('App', () => {
     });
 
     it('can be constructed', () => {
-        const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+        const app = newIdentityRouter(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
         expect(app).is.not.null;
     });
 
     it('can be constructed with prod settings', () => {
-        const app = newApp(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+        const app = newIdentityRouter(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
         expect(app).is.not.null;
     });
 
     describe('/session POST', () => {
         it('should return the newly created session when there is no session information', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, true]);
 
@@ -168,8 +167,7 @@ describe('App', () => {
         });
 
         it('should return a newly created session with bad session information', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.getOrCreateSession(null, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, true]);
 
@@ -187,8 +185,7 @@ describe('App', () => {
         });
 
         it('should return an already existing session', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.getOrCreateSession(theSessionToken, td.matchers.isA(Date))).thenReturn([theSessionToken, theSession, false]);
 
@@ -213,8 +210,7 @@ describe('App', () => {
 
     describe('/session GET', () => {
         it('should return an existing session', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.getSession(theSessionToken)).thenReturn(theSession);
 
@@ -240,8 +236,7 @@ describe('App', () => {
 
     describe('/session DELETE', () => {
         it('should succeed', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.removeSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn();
 
@@ -269,8 +264,7 @@ describe('App', () => {
 
     describe('/session/agree-to-cookie-policy POST', () => {
         it('should succeed', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.agreeToCookiePolicyForSession(theSessionToken, td.matchers.isA(Date), theSession.xsrfToken)).thenReturn(theSessionWithAgreement);
 
@@ -300,8 +294,7 @@ describe('App', () => {
 
     describe('/user POST', () => {
         it('should return a new user when there isn\'t one', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(auth0Client.getProfile(theSessionTokenWithUser.userToken as string))
                 .thenReturn(JSON.stringify(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe)));
@@ -323,8 +316,7 @@ describe('App', () => {
         });
 
         it('should return an existing user when there is one', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(auth0Client.getProfile(theSessionTokenWithUser.userToken as string))
                 .thenReturn(JSON.stringify(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe)));
@@ -361,8 +353,7 @@ describe('App', () => {
 
     describe('/user GET', () => {
         it('should return an existing user', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(auth0Client.getProfile(theSessionTokenWithUser.userToken as string))
                 .thenReturn(JSON.stringify(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe)));
@@ -396,8 +387,7 @@ describe('App', () => {
 
     describe('/users-info GET', () => {
         it('should retrieve requested users', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             td.when(repository.getUsersInfo([1, 2])).thenReturn([userInfoJohnDoe, userInfoJaneDoe]);
 
@@ -414,8 +404,7 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when there are no ids', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const appAgent = agent(app);
+            const appAgent = buildAppAgent();
 
             await appAgent
                 .get('/users-info')
@@ -434,8 +423,7 @@ describe('App', () => {
             '%5B%5D',
             '%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%5D']) {
             it(`should return BAD_REQUEST when the bad ids are "${badIds}"`, async () => {
-                const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-                const appAgent = agent(app);
+                const appAgent = buildAppAgent();
 
                 await appAgent
                     .get(`/users-info?ids=${badIds}`)
@@ -457,10 +445,19 @@ describe('App', () => {
         });
     });
 
+    function buildAppAgent() {
+        const router = newIdentityRouter(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+        const app = express();
+        app.disable('x-powered-by');
+        app.use('/', router);
+
+        return agent(app);
+    }
+
     type Method = 'post' | 'get' | 'delete';
 
-    function newAgent(app: express.Express, uri: string, method: Method): Test {
-        const appAgent = agent(app);
+    function newAgent(uri: string, method: Method): Test {
+        const appAgent = buildAppAgent();
 
         switch (method) {
             case 'post':
@@ -474,8 +471,7 @@ describe('App', () => {
 
     function badOrigins(uri: string, method: Method) {
         it('should return BAD_REQUEST when there is no origin', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .expect(HttpStatus.BAD_REQUEST)
@@ -485,8 +481,7 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the origin is not allowed', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .set('Origin', 'bad-origin')
@@ -499,8 +494,7 @@ describe('App', () => {
 
     function badSessionToken(uri: string, method: Method) {
         it('should return BAD_REQUEST when there is no session token', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .set('Origin', 'core')
@@ -511,8 +505,7 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the session token is bad', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .set(SESSION_TOKEN_HEADER_NAME, 'bad token')
@@ -526,8 +519,7 @@ describe('App', () => {
 
     function badXsrfToken(uri: string, method: Method) {
         it('should return BAD_REQUEST when the xsrf token is missing', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
@@ -539,8 +531,7 @@ describe('App', () => {
         });
 
         it('should return BAD_REQUEST when the xsrf token is invalid', async () => {
-            const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-            const restOfTest = newAgent(app, uri, method);
+            const restOfTest = newAgent(uri, method);
 
             await restOfTest
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
@@ -557,10 +548,7 @@ describe('App', () => {
         for (let oneCase of Object.keys(cases)) {
             const [getProfileResult, statusCode] = (cases as any)[oneCase]; // sigh
             it(`should return ${oneCase}`, async () => {
-                const repository = td.object({});
-
-                const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-                const restOfTest = newAgent(app, uri, method);
+                const restOfTest = newAgent(uri, method);
 
                 td.when(auth0Client.getProfile(theSessionTokenWithUser.userToken as string))
                     .thenReturn(getProfileResult);
@@ -585,14 +573,31 @@ describe('App', () => {
             it(`should return ${oneCase}`, async () => {
                 const repository = td.object(repositoryTemplate);
 
-                const app = newApp(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
-                const restOfTest = newAgent(app, uri, method);
+                const router = newIdentityRouter(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+                const app = express();
+                app.disable('x-powered-by');
+                app.use('/', router);
+
+                const appAgent = agent(app);
+                let restOfTest: Test|null = null;
+
+                switch (method) {
+                case 'post':
+                    restOfTest = appAgent.post(uri);
+                    break;
+                case 'get':
+                    restOfTest = appAgent.get(uri);
+                    break;
+                case 'delete':
+                    restOfTest = appAgent.delete(uri);
+                    break;
+                }
 
                 td.when(auth0Client.getProfile(td.matchers.anything()))
                     .thenReturn(JSON.stringify(auth0ProfileMarshaller.pack(auth0ProfileJohnDoe)));
                 td.when((repository as any)[methodName](), { ignoreExtraArgs: true }).thenThrow(error);
 
-                await restOfTest
+                await (restOfTest as Test)
                     .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                     .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
                     .set('Origin', 'core')

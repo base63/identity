@@ -1,10 +1,11 @@
 import * as auth0 from 'auth0'
+import * as express from 'express'
 import * as knex from 'knex'
 
 import { startupMigration } from '@base63/common-server-js'
 
-import { newApp } from './app'
 import * as config from './config'
+import { newIdentityRouter } from './identity-router'
 import { Repository } from './repository'
 
 
@@ -20,7 +21,8 @@ function main() {
         connection: config.DATABASE_URL
     });
     const repository = new Repository(conn);
-    const app = newApp({
+
+    const identityRouter = newIdentityRouter({
         env: config.ENV,
         name: config.NAME,
         clients: config.CLIENTS,
@@ -30,6 +32,9 @@ function main() {
         rollbarToken: config.ROLLBAR_TOKEN
     }, auth0Client, repository);
 
+    const app = express();
+    app.disable('x-powered-by');
+    app.use('/', identityRouter);
     app.listen(config.PORT, config.ADDRESS, () => {
         console.log(`Started identity service on ${config.ADDRESS}:${config.PORT}`);
     });
