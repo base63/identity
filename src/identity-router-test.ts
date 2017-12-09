@@ -175,9 +175,16 @@ describe('App', () => {
                 .post('/session')
                 .set(SESSION_TOKEN_HEADER_NAME, 'bad data here')
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.CREATED)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
                     expect(result.sessionToken).to.eql(theSessionToken);
                     expect(result.session).to.eql(theSession);
@@ -193,9 +200,16 @@ describe('App', () => {
                 .post('/session')
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
                     expect(result.sessionToken).to.eql(theSessionToken);
                     expect(result.session).to.eql(theSession);
@@ -218,9 +232,16 @@ describe('App', () => {
                 .get('/session')
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionResponseMarshaller.extract(response.body);
                     expect(result.session).to.eql(theSession);
                 });
@@ -245,9 +266,16 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.NO_CONTENT)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    console.log(response.header)
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(5);
+
                     expect(response.text).to.have.length(0);
                 });
         });
@@ -273,9 +301,16 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionResponseMarshaller.extract(response.body);
                     expect(result.session).to.eql(theSessionWithAgreement);
                 });
@@ -306,9 +341,16 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                 .set(XSRF_TOKEN_HEADER_NAME, theSessionWithUser.xsrfToken)
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.CREATED)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
                     expect(result.sessionToken).to.eql(theSessionTokenWithUser);
                     expect(result.session).to.eql(theSessionWithUser);
@@ -328,9 +370,16 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                 .set(XSRF_TOKEN_HEADER_NAME, theSessionWithUser.xsrfToken)
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionAndTokenResponseMarshaller.extract(response.body);
                     expect(result.sessionToken).to.eql(theSessionTokenWithUser);
                     expect(result.session).to.eql(theSessionWithUser);
@@ -364,9 +413,16 @@ describe('App', () => {
                 .get('/user')
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = sessionResponseMarshaller.extract(response.body);
                     expect(result.session).to.eql(theSessionWithUser);
                 });
@@ -395,9 +451,16 @@ describe('App', () => {
                 .get('/users-info?ids=%5B1%2C2%5D') // ids=[1,2]
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.OK)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     const result = usersInfoResponseMarshaller.extract(response.body);
                     expect(result.usersInfo).to.eql([userInfoJohnDoe, userInfoJaneDoe]);
                 });
@@ -410,9 +473,16 @@ describe('App', () => {
                 .get('/users-info')
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                 .set('Origin', 'core')
-                .expect('Content-Type', 'application/json; charset=utf-8')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     expect(response.text).to.have.length(0);
                 });
         });
@@ -429,9 +499,16 @@ describe('App', () => {
                     .get(`/users-info?ids=${badIds}`)
                     .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                     .set('Origin', 'core')
-                    .expect('Content-Type', 'application/json; charset=utf-8')
                     .expect(HttpStatus.BAD_REQUEST)
+                    .expect('Content-Type', 'application/json; charset=utf-8')
+                    .expect('Transfer-Encoding', 'chunked')
+                    .expect('Content-Encoding', 'gzip')
+                    .expect('Vary', 'Accept-Encoding')
+                    .expect('Connection', 'close')
                     .then(response => {
+                        expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                        expect(Object.keys(response.header)).has.length(6);
+
                         expect(response.text).to.have.length(0);
                     });
             });
@@ -475,7 +552,12 @@ describe('App', () => {
 
             await restOfTest
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('transfer-encoding', 'date', 'connection');
+                    expect(Object.keys(response.header)).has.length(3);
+
                     expect(response.text).to.have.length(0);
                 });
         });
@@ -486,7 +568,12 @@ describe('App', () => {
             await restOfTest
                 .set('Origin', 'bad-origin')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('transfer-encoding', 'date', 'connection');
+                    expect(Object.keys(response.header)).has.length(3);
+
                     expect(response.text).to.have.length(0);
                 });
         });
@@ -499,7 +586,15 @@ describe('App', () => {
             await restOfTest
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     expect(response.text).has.length(0);
                 });
         });
@@ -511,7 +606,15 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, 'bad token')
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     expect(response.text).has.length(0);
                 });
         });
@@ -525,7 +628,15 @@ describe('App', () => {
                 .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionToken)))
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     expect(response.text).has.length(0);
                 });
         });
@@ -538,7 +649,15 @@ describe('App', () => {
                 .set(XSRF_TOKEN_HEADER_NAME, 'A BAD TOKEN')
                 .set('Origin', 'core')
                 .expect(HttpStatus.BAD_REQUEST)
+                .expect('Content-Type', 'application/json; charset=utf-8')
+                .expect('Transfer-Encoding', 'chunked')
+                .expect('Content-Encoding', 'gzip')
+                .expect('Vary', 'Accept-Encoding')
+                .expect('Connection', 'close')
                 .then(response => {
+                    expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                    expect(Object.keys(response.header)).has.length(6);
+
                     expect(response.text).has.length(0);
                 });
         })
@@ -557,9 +676,16 @@ describe('App', () => {
                     .set(SESSION_TOKEN_HEADER_NAME, JSON.stringify(sessionTokenMarshaller.pack(theSessionTokenWithUser)))
                     .set(XSRF_TOKEN_HEADER_NAME, theSessionWithUser.xsrfToken)
                     .set('Origin', 'core')
-                    .expect('Content-Type', 'application/json; charset=utf-8')
                     .expect(statusCode)
+                    .expect('Content-Type', 'application/json; charset=utf-8')
+                    .expect('Transfer-Encoding', 'chunked')
+                    .expect('Content-Encoding', 'gzip')
+                    .expect('Vary', 'Accept-Encoding')
+                    .expect('Connection', 'close')
                     .then(response => {
+                        expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                        expect(Object.keys(response.header)).has.length(6);
+
                         expect(response.text).to.have.length(0);
                     });
             });
@@ -602,7 +728,15 @@ describe('App', () => {
                     .set(XSRF_TOKEN_HEADER_NAME, theSession.xsrfToken)
                     .set('Origin', 'core')
                     .expect(statusCode)
+                    .expect('Content-Type', 'application/json; charset=utf-8')
+                    .expect('Transfer-Encoding', 'chunked')
+                    .expect('Content-Encoding', 'gzip')
+                    .expect('Vary', 'Accept-Encoding')
+                    .expect('Connection', 'close')
                     .then(response => {
+expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                        expect(Object.keys(response.header)).has.length(6);
+
                         expect(response.text).to.have.length(0);
                     });
             });

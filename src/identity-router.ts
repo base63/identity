@@ -55,23 +55,23 @@ export function newIdentityRouter(
     const usersInfoResponseMarshaller = new (MarshalFrom(UsersInfoResponse))();
     const idsMarshaller = new (ArrayOf(r.IdMarshaller))();
 
-    const app = express.Router();
+    const identityRouter = express.Router();
 
-    app.use(cookieParser());
+    identityRouter.use(cookieParser());
     if (isLocal(config.env)) {
-        app.use(newLocalCommonServerMiddleware(config.name, config.env, config.forceDisableLogging));
+        identityRouter.use(newLocalCommonServerMiddleware(config.name, config.env, config.forceDisableLogging));
     } else {
-        app.use(newCommonServerMiddleware(
+        identityRouter.use(newCommonServerMiddleware(
             config.name,
             config.env,
             config.logglyToken as string,
             config.logglySubdomain as string,
             config.rollbarToken as string));
-        app.use(compression());
     }
-    app.use(newCommonApiServerMiddleware(config.clients));
+    identityRouter.use(compression({threshold: 0}));
+    identityRouter.use(newCommonApiServerMiddleware(config.clients));
 
-    app.post('/session', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.post('/session', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
 
         try {
@@ -92,7 +92,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.get('/session', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.get('/session', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -124,7 +124,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.delete('/session', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.delete('/session', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -166,7 +166,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.post('/session/agree-to-cookie-policy', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.post('/session/agree-to-cookie-policy', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -218,7 +218,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.post('/user', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.post('/user', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -286,7 +286,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.get('/user', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.get('/user', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -345,7 +345,7 @@ export function newIdentityRouter(
         }
     }));
 
-    app.get('/users-info', wrap(async (req: Request, res: express.Response) => {
+    identityRouter.get('/users-info', wrap(async (req: Request, res: express.Response) => {
         const currentSessionToken = extractSessionToken(req);
         if (currentSessionToken == null) {
             req.log.warn('Expected a session token to exist');
@@ -432,5 +432,5 @@ export function newIdentityRouter(
         }
     }
 
-    return app;
+    return identityRouter;
 }
