@@ -9,7 +9,7 @@ import { newIdentityRouter } from './identity-router'
 import { Repository } from './repository'
 
 
-function main() {
+async function main() {
     startupMigration();
 
     const auth0Client = new auth0.AuthenticationClient({
@@ -21,6 +21,7 @@ function main() {
         connection: config.DATABASE_URL
     });
     const repository = new Repository(conn);
+    await repository.init();
 
     const identityRouter = newIdentityRouter({
         env: config.ENV,

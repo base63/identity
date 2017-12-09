@@ -87,6 +87,11 @@ export class Repository {
     constructor(conn: knex) {
         this._conn = conn;
         this._auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
+
+    }
+
+    async init(): Promise<void> {
+        await this._conn.schema.raw('set transaction isolation level serializable;');
     }
 
     async getOrCreateSession(sessionToken: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
