@@ -91,7 +91,7 @@ export class Repository {
     }
 
     async init(): Promise<void> {
-        await this._conn.schema.raw('set transaction isolation level serializable;');
+        await this._conn.schema.raw('set session characteristics as transaction isolation level serializable;');
     }
 
     async getOrCreateSession(sessionToken: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
