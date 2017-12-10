@@ -217,9 +217,9 @@ describe('App', () => {
         });
 
         badOrigins('/session', 'post');
-        badRepository('/session', 'post', { getOrCreateSession: (_t: SessionToken | null, _c: Date) => { } }, {
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occured'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badRepository('/session', 'post', { getOrCreateSession: (_t: SessionToken | null, _c: Date) => { } }, new Map<string, [Error, number]>([
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occured'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/session GET', () => {
@@ -249,10 +249,10 @@ describe('App', () => {
 
         badOrigins('/session', 'get');
         badSessionToken('/session', 'get');
-        badRepository('/session', 'get', { getSession: (_t: SessionToken) => { } }, {
-            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badRepository('/session', 'get', { getSession: (_t: SessionToken) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the session is not present', [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/session DELETE', () => {
@@ -272,7 +272,6 @@ describe('App', () => {
                 .expect('Vary', 'Accept-Encoding')
                 .expect('Connection', 'close')
                 .then(response => {
-                    console.log(response.header)
                     expect(response.header).contain.keys('content-type', 'date', 'connection', 'content-encoding', 'vary');
                     expect(Object.keys(response.header)).has.length(5);
 
@@ -283,11 +282,11 @@ describe('App', () => {
         badOrigins('/session', 'delete');
         badSessionToken('/session', 'delete');
         badXsrfToken('/session', 'delete');
-        badRepository('/session', 'delete', { removeSession: (_t: SessionToken, _d: Date, _x: string) => { } }, {
-            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badRepository('/session', 'delete', { removeSession: (_t: SessionToken, _d: Date, _x: string) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the session is not present', [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['BAD_REQUEST when the XSRF token is mismatched', [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/session/agree-to-cookie-policy POST', () => {
@@ -319,12 +318,12 @@ describe('App', () => {
         badOrigins('/session/agree-to-cookie-policy', 'post');
         badSessionToken('/session/agree-to-cookie-policy', 'post');
         badXsrfToken('/session/agree-to-cookie-policy', 'post');
-        badRepository('/session/agree-to-cookie-policy', 'post', { agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { } }, {
-            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badRepository('/session/agree-to-cookie-policy', 'post', { agreeToCookiePolicyForSession: (_t: SessionToken, _d: Date, _x: string) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the session is not present', [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['NOT_FOUND when the user is not present', [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['BAD_REQUEST when the XSRF token is mismatched', [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/user POST', () => {
@@ -389,15 +388,15 @@ describe('App', () => {
         badOrigins('/user', 'post');
         badSessionToken('/user', 'post');
         badXsrfToken('/user', 'post');
-        badAuth0('/user', 'post', {
-            'UNAUTHORIZED when the token was not accepted': ['Unauthorized', HttpStatus.UNAUTHORIZED],
-            'INTERNAL_SERVER_ERROR when the result could not be parsed': ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]
-        });
-        badRepository('/user', 'post', { getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, {
-            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'BAD_REQUEST when the XSRF token is mismatched': [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badAuth0('/user', 'post', new Map<string, [string, number]>([
+            ['UNAUTHORIZED when the token was not accepted', ['Unauthorized', HttpStatus.UNAUTHORIZED]],
+            ['INTERNAL_SERVER_ERROR when the result could not be parsed', ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
+        badRepository('/user', 'post', { getOrCreateUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the session is not present', [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['BAD_REQUEST when the XSRF token is mismatched', [new XsrfTokenMismatchError('Invalid token'), HttpStatus.BAD_REQUEST]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/user GET', () => {
@@ -430,15 +429,15 @@ describe('App', () => {
 
         badOrigins('/user', 'get');
         badSessionToken('/user', 'get');
-        badAuth0('/user', 'get', {
-            'UNAUTHORIZED when the token was not accepted': ['Unauthorized', HttpStatus.UNAUTHORIZED],
-            'INTERNAL_SERVER_ERROR when the result could not be parsed': ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]
-        });
-        badRepository('/user', 'get', { getUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, {
-            'NOT_FOUND when the session is not present': [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badAuth0('/user', 'get', new Map<string, [string, number]>([
+            ['UNAUTHORIZED when the token was not accepted', ['Unauthorized', HttpStatus.UNAUTHORIZED]],
+            ['INTERNAL_SERVER_ERROR when the result could not be parsed', ['A bad response', HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
+        badRepository('/user', 'get', { getUserOnSession: (_t: SessionToken, _a: Auth0Profile, _d: Date, _x: string) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the session is not present', [new SessionNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['NOT_FOUND when the user is not present', [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     describe('/users-info GET', () => {
@@ -516,10 +515,10 @@ describe('App', () => {
 
         badOrigins('/users-info?ids=%5B1%2C2%5D', 'get');
         badSessionToken('/users-info?ids=%5B1%2C2%5D', 'get');
-        badRepository('/users-info?ids=%5B1%2C2%5D', 'get', { getUsersInfo: (_ids: number[]) => { } }, {
-            'NOT_FOUND when the user is not present': [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND],
-            'INTERNAL_SERVER_ERROR when the repository errors': [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]
-        });
+        badRepository('/users-info?ids=%5B1%2C2%5D', 'get', { getUsersInfo: (_ids: number[]) => { } }, new Map<string, [Error, number]>([
+            ['NOT_FOUND when the user is not present', [new UserNotFoundError('Not found'), HttpStatus.NOT_FOUND]],
+            ['INTERNAL_SERVER_ERROR when the repository errors', [new Error('An error occurred'), HttpStatus.INTERNAL_SERVER_ERROR]]
+        ]));
     });
 
     function buildAppAgent() {
