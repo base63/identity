@@ -1,13 +1,13 @@
 {
   "name": "@base63/identity",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "The identity service.",
   "author": "Base63 team",
   "scripts": {
     "build": "tsc",
     "serve-dev": "mkdir -p out && touch out/index.js && (tsc --watch & nodemon out/index.js) | bunyan --output short",
     "serve-prod": "node out/index.js | bunyan --output simple",
-    "test": "rm -rf out && tsc --target es3 && istanbul cover --config ./.istanbul.yml ./node_modules/mocha/bin/_mocha --  $(find out -name '*-test.js') && remap-istanbul -i ./build/coverage/coverage-final.json -o ./build/coverage/coverage-remapped.json && coverage-filter -i ./build/coverage/coverage-remapped.json -o ./build/coverage/coverage-filtered.json && rm -rf out",
+    "test": "tsc && istanbul cover --config ./.istanbul.yml ./node_modules/mocha/bin/_mocha --  $(find out -name '*-test.js') && remap-istanbul -i ./build/coverage/coverage-final.json -o ./build/coverage/coverage-remapped.json && coverage-filter -i ./build/coverage/coverage-remapped.json -o ./build/coverage/coverage-filtered.json",
     "push-coverage-to-codecov": "codecov -f ./build/coverage/coverage-filtered.json",
     "docs": "typedoc src/"
   },
@@ -26,9 +26,9 @@
     "tsconfig.json": "f:tsconfig.json"
   },
   "dependencies": {
-    "@base63/common-js": "=0.2.1",
-    "@base63/common-server-js": "=1.4.0",
-    "@base63/identity-sdk-js": "=0.5.0",
+    "@base63/common-js": "=0.2.2",
+    "@base63/common-server-js": "=1.4.1",
+    "@base63/identity-sdk-js": "=0.5.1",
     "async-middleware": "=1.2.1",
     "auth0": "=2.9.1",
     "compression": "=1.7.1",
