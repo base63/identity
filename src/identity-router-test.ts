@@ -663,8 +663,7 @@ describe('App', () => {
     }
 
     function badAuth0(uri: string, method: Method, cases: Map<string, [string, number]>) {
-        for (let oneCase of Object.keys(cases)) {
-            const [getProfileResult, statusCode] = (cases as any)[oneCase]; // sigh
+        for (let [oneCase, [getProfileResult, statusCode]] of cases) {
             it(`should return ${oneCase}`, async () => {
                 const restOfTest = newAgent(uri, method);
 
@@ -692,9 +691,8 @@ describe('App', () => {
     }
 
     function badRepository(uri: string, method: Method, repositoryTemplate: object, cases: Map<string, [Error, number]>) {
-        for (let oneCase of Object.keys(cases)) {
+        for (let [oneCase, [error, statusCode]] of cases) {
             const methodName = Object.keys(repositoryTemplate)[0]
-            const [error, statusCode] = (cases as any)[oneCase]; // sigh
             it(`should return ${oneCase}`, async () => {
                 const repository = td.object(repositoryTemplate);
 
