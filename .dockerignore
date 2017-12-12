@@ -10,6 +10,7 @@ Dockerfile
 
 # Build process output files.
 /build/
+/docs/
 /out/
 
 # NPM packages.
