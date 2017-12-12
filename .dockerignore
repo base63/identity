@@ -20,4 +20,4 @@ Dockerfile
 .DS_Store
 
 # Secrets files
-secrets.json
+.env
