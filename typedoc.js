@@ -1,5 +1,5 @@
 module.exports = {
-    "name": "common-server-js",
+    "name": "identity",
     "mode": "modules",
     "module": "common-js",
     "exclude": "**/*-test.ts",

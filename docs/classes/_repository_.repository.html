@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Repository | common-server-js</title>
+	<title>Repository | identity</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">common-server-js</a>
+					<a href="../index.html" class="title">identity</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -69,6 +69,27 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The final arbiter of business logic and the handler of interactions with the storage engine.</p>
+					</div>
+					<dl class="tsd-comment-tags">
+						<dt>note</dt>
+						<dd><p>Each method represents an action which can be done on the entities the identity service
+								operates with. Conversely, no other action can be done on these entities that is not
+							provided by this class.</p>
+						</dd>
+						<dt>note</dt>
+						<dd><p>The storage engine is PostgreSQL at the moment. Each entity (session and user) has a
+								corresponding table. Each also has a corresponding events table. Whenever a mutation
+								occurs, the fact is recorded in the events table along side the data of the mutation.
+								Ideally, one would be able to reconstruct the current state in the entity table, by
+							applying the mutations described in the events table in order.</p>
+						</dd>
+					</dl>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -90,7 +111,7 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_repository_.repository.html#max_number_of_users" class="tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="_repository_.repository.html#max_number_of_users_to_return" class="tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS_<wbr>TO_<wbr>RETURN</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -98,12 +119,13 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#_dbusertopublicuser" class="tsd-kind-icon">_db<wbr>User<wbr>ToPublic<wbr>User</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#agreetocookiepolicyforsession" class="tsd-kind-icon">agree<wbr>ToCookie<wbr>Policy<wbr>For<wbr>Session</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#expiresession" class="tsd-kind-icon">expire<wbr>Session</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#getorcreatesession" class="tsd-kind-icon">get<wbr>OrCreate<wbr>Session</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#getorcreateuseronsession" class="tsd-kind-icon">get<wbr>OrCreate<wbr>User<wbr>OnSession</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#getsession" class="tsd-kind-icon">get<wbr>Session</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#getuseronsession" class="tsd-kind-icon">get<wbr>User<wbr>OnSession</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#getusersinfo" class="tsd-kind-icon">get<wbr>Users<wbr>Info</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#init" class="tsd-kind-icon">init</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_repository_.repository.html#removesession" class="tsd-kind-icon">remove<wbr>Session</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_repository_.repository.html#_dbsessiontosession" class="tsd-kind-icon">_db<wbr>Session<wbr>ToSession</a></li>
 							</ul>
 						</section>
@@ -122,13 +144,23 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L85">repository.ts:85</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L103">repository.ts:103</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Construct a repository.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>conn: <span class="tsd-signature-type">knex</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>An open connection to the database.</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_repository_.repository.html" class="tsd-signature-type">Repository</a></h4>
@@ -139,14 +171,19 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
-					<a name="max_number_of_users" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS</h3>
-					<div class="tsd-signature tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;20</span></div>
+					<a name="max_number_of_users_to_return" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS_<wbr>TO_<wbr>RETURN</h3>
+					<div class="tsd-signature tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS_<wbr>TO_<wbr>RETURN<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> =&nbsp;20</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L58">repository.ts:58</a></li>
+							<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L76">repository.ts:76</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The maximum number of users <a href="_repository_.repository.html#getusersinfo">Repository.getUsersInfo</a> is allowed to return.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -161,7 +198,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L478">repository.ts:478</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L590">repository.ts:590</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -178,57 +215,65 @@
 					<a name="agreetocookiepolicyforsession" class="tsd-anchor"></a>
 					<h3>agree<wbr>ToCookie<wbr>Policy<wbr>For<wbr>Session</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">agree<wbr>ToCookie<wbr>Policy<wbr>For<wbr>Session<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">agree<wbr>ToCookie<wbr>Policy<wbr>For<wbr>Session<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L198">repository.ts:198</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L280">repository.ts:280</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Agree to the cookie policy for the session identified by {@link SessionToken}. If the user is
+									also logged in (there exists an attached {@link User}), that is also marked as such.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>note</dt>
+									<dd><p>Events are generated for both the session and user entities.</p>
+									</dd>
+									<dt>note</dt>
+									<dd><p>This is a mutation, and as such an xsrfToken needs to be provided and match the one
+										attached to the session.</p>
+									</dd>
+									<dt>note</dt>
+									<dd><p>This operation is idempotent.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session token doesn&#39;t identify an existing active session, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session&#39;s XSRF token and the provided one don&#39;t match, this will raise
+										a <a href="_repository_.xsrftokenmismatcherror.html">XsrfTokenMismatchError</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session token to try to remove.</p>
+									</div>
 								</li>
 								<li>
 									<h5>requestTime: <span class="tsd-signature-type">Date</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the time at which the request was issued to the identity service. Used
+										populate various &quot;modified_at&quot; fields.</p>
+									</div>
 								</li>
 								<li>
 									<h5>xsrfToken: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the xsrfToken which guards this mutation from being issues via XSRF
+										attacks.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="expiresession" class="tsd-anchor"></a>
-					<h3>expire<wbr>Session</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">expire<wbr>Session<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L164">repository.ts:164</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
-								</li>
-								<li>
-									<h5>requestTime: <span class="tsd-signature-type">Date</span></h5>
-								</li>
-								<li>
-									<h5>xsrfToken: <span class="tsd-signature-type">string</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -236,25 +281,48 @@
 					<a name="getorcreatesession" class="tsd-anchor"></a>
 					<h3>get<wbr>OrCreate<wbr>Session</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>OrCreate<wbr>Session<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>OrCreate<wbr>Session<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L92">repository.ts:92</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L133">repository.ts:133</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve the session associated with the provided {@link SessionToken}, or create a new one
+										if there&#39;s no token. If the token is null or if it doesn&#39;t exist, a new session is created.
+									This means allocating a token and creating a session for it.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>note</dt>
+									<dd><p>The operation is idempotent wrt sessionToken. Calling this multiple times with the same
+										sessionToken (or with the same sessionId more precisely) will just retrieve the initial one.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h5>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session token to try to retrieve. Can be null, in which case a
+										new session will be created.</p>
+									</div>
 								</li>
 								<li>
 									<h5>requestTime: <span class="tsd-signature-type">Date</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the time at which the request was issued to the identity service. Used
+										populate various &quot;modified_at&quot; fields.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>a tuple of {@link SessionToken}, {@link Session} and a boolean indicating whether
+							a new session was created or not.</p>
 						</li>
 					</ul>
 				</section>
@@ -262,31 +330,77 @@
 					<a name="getorcreateuseronsession" class="tsd-anchor"></a>
 					<h3>get<wbr>OrCreate<wbr>User<wbr>OnSession</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>OrCreate<wbr>User<wbr>OnSession<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, auth0Profile<span class="tsd-signature-symbol">: </span><a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>OrCreate<wbr>User<wbr>OnSession<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, auth0Profile<span class="tsd-signature-symbol">: </span><a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L259">repository.ts:259</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L366">repository.ts:366</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve the session and the corresponding user associated with the provided
+										{@link SessionToken} and <a href="_auth0_profile_.auth0profile.html">Auth0Profile</a>, or create a new one if there&#39;s no token
+									or user. To be more precise, the session must exist, it&#39;s just the user which is optional.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>note</dt>
+									<dd><p>The operation is idempotent wrt sessionToken and auth0Profile. Calling this multiple
+											times with the same sessionToken and auth0Profile (or sessionId and userToken more
+										precisely) will just retrieve the initial ones.</p>
+									</dd>
+									<dt>note</dt>
+									<dd><p>This is a mutation, and as such an xsrfToken needs to be provided and match the one
+										attached to the session.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session token doesn&#39;t identify an existing active session, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session exists, but is attached to another user, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session&#39;s XSRF token and the provided one don&#39;t match, this will raise
+										a <a href="_repository_.xsrftokenmismatcherror.html">XsrfTokenMismatchError</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session for which the user will be created.</p>
+									</div>
 								</li>
 								<li>
 									<h5>auth0Profile: <a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>information from Auth0 about the user.</p>
+									</div>
 								</li>
 								<li>
 									<h5>requestTime: <span class="tsd-signature-type">Date</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the time at which the request was issued to the identity service. Used
+										populate various &quot;modified_at&quot; fields.</p>
+									</div>
 								</li>
 								<li>
 									<h5>xsrfToken: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the xsrfToken which guards this mutation from being issues via XSRF
+										attacks.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>a tuple of {@link SessionToken}, {@link Session} and a boolean indicating whether
+							a new user was created or not.</p>
 						</li>
 					</ul>
 				</section>
@@ -294,22 +408,37 @@
 					<a name="getsession" class="tsd-anchor"></a>
 					<h3>get<wbr>Session</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Session<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Session<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L148">repository.ts:148</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L197">repository.ts:197</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve the session associated with the provided {@link SessionToken}.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>If the session token doesn&#39;t identify an existing active session, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session token to try to retrieve.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A {@link Session} object describing the session.</p>
 						</li>
 					</ul>
 				</section>
@@ -317,25 +446,52 @@
 					<a name="getuseronsession" class="tsd-anchor"></a>
 					<h3>get<wbr>User<wbr>OnSession</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>User<wbr>OnSession<span class="tsd-signature-symbol">(</span>authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, auth0Profile<span class="tsd-signature-symbol">: </span><a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>User<wbr>OnSession<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, auth0Profile<span class="tsd-signature-symbol">: </span><a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L398">repository.ts:398</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L494">repository.ts:494</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve the session and user associated with the provided {@link SessionToken} and
+									<a href="_auth0_profile_.auth0profile.html">Auth0Profile</a></p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>If the session token doesn&#39;t identify an existing active session, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session exists, but is attached to another user, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the Auth0 profile information doesn&#39;t identify an existing active user, this will
+										raise a <a href="_repository_.usernotfounderror.html">UserNotFoundError</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session token to try to retrieve.</p>
+									</div>
 								</li>
 								<li>
 									<h5>auth0Profile: <a href="_auth0_profile_.auth0profile.html" class="tsd-signature-type">Auth0Profile</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the Auth0 profile of the user.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Session</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A {@link Session} object describing the session and user.</p>
 						</li>
 					</ul>
 				</section>
@@ -343,25 +499,133 @@
 					<a name="getusersinfo" class="tsd-anchor"></a>
 					<h3>get<wbr>Users<wbr>Info</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Users<wbr>Info<span class="tsd-signature-symbol">(</span>_authInfo<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, ids<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">PublicUser</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Users<wbr>Info<span class="tsd-signature-symbol">(</span>ids<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">PublicUser</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L432">repository.ts:432</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L540">repository.ts:540</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve a set of users. Only a safe public view of the user is provided, as this
+									is meant to be called on behalf of one user to find information about other users.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>note</dt>
+									<dd><p>At most <a href="_repository_.repository.html#max_number_of_users_to_return">Repository.MAX_NUMBER_OF_USERS_TO_RETURN</a> values will be provided.</p>
+									</dd>
+									<dt>todo</dt>
+									<dd><p>Some pagination will be required here.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If there&#39;s no ids to retrieve or if there are too many, then this will raise
+										a <a href="_repository_.repositoryerror.html">RepositoryError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If one of the requested users can&#39;t be retrieved, either because it doesn&#39;t exist
+										or is inactive, this will throw <a href="_repository_.usernotfounderror.html">UserNotFoundError</a>.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>_authInfo: <span class="tsd-signature-type">SessionToken</span></h5>
-								</li>
-								<li>
 									<h5>ids: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>an array of ids of users to return.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">PublicUser</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A list of user information.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="init" class="tsd-anchor"></a>
+					<h3>init</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">init<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L116">repository.ts:116</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Perform any initialization work on the repository before it can begin serving.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="removesession" class="tsd-anchor"></a>
+					<h3>remove<wbr>Session</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">remove<wbr>Session<span class="tsd-signature-symbol">(</span>sessionToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">SessionToken</span>, requestTime<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Date</span>, xsrfToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L229">repository.ts:229</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Remove the session identified by the provided {@link SessionToken}.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>note</dt>
+									<dd><p>This simply marks the session as being in the {@link SessionState.Removed} state,
+										and adds the appropriate event for the session, but doesn&#39;t physically remove anything.</p>
+									</dd>
+									<dt>note</dt>
+									<dd><p>This is a mutation, and as such an xsrfToken needs to be provided and match the one
+										attached to the session.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session token doesn&#39;t identify an existing active session, this will raise
+										a <a href="_repository_.sessionnotfounderror.html">SessionNotFoundError</a>.</p>
+									</dd>
+									<dt>throws</dt>
+									<dd><p>If the session&#39;s XSRF token and the provided one don&#39;t match, this will raise
+										a <a href="_repository_.xsrftokenmismatcherror.html">XsrfTokenMismatchError</a>.</p>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>sessionToken: <span class="tsd-signature-type">SessionToken</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the session token to try to remove.</p>
+									</div>
+								</li>
+								<li>
+									<h5>requestTime: <span class="tsd-signature-type">Date</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the time at which the request was issued to the identity service. Used
+										populate various &quot;modified_at&quot; fields.</p>
+									</div>
+								</li>
+								<li>
+									<h5>xsrfToken: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the xsrfToken which guards this mutation from being issues via XSRF
+										attacks.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -375,7 +639,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/base63/identity/blob/2fcde36/src/repository.ts#L451">repository.ts:451</a></li>
+									<li>Defined in <a href="https://github.com/base63/identity/blob/fc0a41c/src/repository.ts#L563">repository.ts:563</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -403,13 +667,13 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_app_.html">"app"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
 						<a href="../modules/_auth0_profile_.html">"auth0-<wbr>profile"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_config_.html">"config"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_identity_router_.html">"identity-<wbr>router"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_index_.html">"index"</a>
@@ -430,16 +694,13 @@
 								<a href="_repository_.repository.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
-								<a href="_repository_.repository.html#max_number_of_users" class="tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS</a>
+								<a href="_repository_.repository.html#max_number_of_users_to_return" class="tsd-kind-icon">MAX_<wbr>NUMBER_<wbr>OF_<wbr>USERS_<wbr>TO_<wbr>RETURN</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_repository_.repository.html#_dbusertopublicuser" class="tsd-kind-icon">_db<wbr>User<wbr>ToPublic<wbr>User</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_repository_.repository.html#agreetocookiepolicyforsession" class="tsd-kind-icon">agree<wbr>ToCookie<wbr>Policy<wbr>For<wbr>Session</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_repository_.repository.html#expiresession" class="tsd-kind-icon">expire<wbr>Session</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_repository_.repository.html#getorcreatesession" class="tsd-kind-icon">get<wbr>OrCreate<wbr>Session</a>
@@ -455,6 +716,12 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_repository_.repository.html#getusersinfo" class="tsd-kind-icon">get<wbr>Users<wbr>Info</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_repository_.repository.html#init" class="tsd-kind-icon">init</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_repository_.repository.html#removesession" class="tsd-kind-icon">remove<wbr>Session</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
 								<a href="_repository_.repository.html#_dbsessiontosession" class="tsd-kind-icon">_db<wbr>Session<wbr>ToSession</a>
