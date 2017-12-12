@@ -1,7 +1,6 @@
-import { readFileSync } from 'fs'
 import { config } from 'dotenv'
 
-import { Env, parseEnv, isLocal, isOnServer } from '@base63/common-js'
+import { Env, parseEnv, isOnServer } from '@base63/common-js'
 import { getFromEnv } from '@base63/common-server-js'
 
 config();
@@ -15,22 +14,12 @@ export const DATABASE_MIGRATIONS_DIR: string = getFromEnv('DATABASE_MIGRATIONS_D
 export const DATABASE_MIGRATIONS_TABLE: string = getFromEnv('DATABASE_MIGRATIONS_TABLE');
 export const ORIGIN: string = getFromEnv('ORIGIN');
 export const CLIENTS: string[] = getFromEnv('CLIENTS').split(',');
+export const AUTH0_CLIENT_ID: string = getFromEnv('AUTH0_CLIENT_ID');
+export const AUTH0_DOMAIN: string = getFromEnv('AUTH0_DOMAIN');
 
-export let AUTH0_CLIENT_ID: string;
-export let AUTH0_DOMAIN: string;
-export let LOGGLY_TOKEN: string|null;
-export let LOGGLY_SUBDOMAIN: string|null;
-export let ROLLBAR_TOKEN: string|null;
-
-if (isLocal(ENV)) {
-    const secrets = JSON.parse(readFileSync(getFromEnv('SECRETS_PATH'), 'utf-8'));
-
-    AUTH0_CLIENT_ID = secrets['AUTH0_CLIENT_ID'];
-    AUTH0_DOMAIN = secrets['AUTH0_DOMAIN'];
-} else {
-    AUTH0_CLIENT_ID = getFromEnv('AUTH0_CLIENT_ID');
-    AUTH0_DOMAIN = getFromEnv('AUTH0_DOMAIN');
-}
+export let LOGGLY_TOKEN: string | null;
+export let LOGGLY_SUBDOMAIN: string | null;
+export let ROLLBAR_TOKEN: string | null;
 
 if (isOnServer(ENV)) {
     LOGGLY_TOKEN = getFromEnv('LOGGLY_TOKEN');

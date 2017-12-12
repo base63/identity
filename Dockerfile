@@ -41,7 +41,6 @@ ENV AUTH0_DOMAIN null
 ENV LOGGLY_TOKEN null
 ENV LOGGLY_SUBDOMAIN null
 ENV ROLLBAR_TOKEN null
-ENV SECRETS_PATH /base63/var/secrets.json
 
 RUN chown -R base63:base63 /base63/build
 RUN chown -R base63:base63 /base63/out
@@ -49,7 +48,7 @@ RUN chown -R base63:base63 /base63/var
 VOLUME ["/base63/src"]
 VOLUME ["/base63/migrations"]
 VOLUME ["/base63/node_modules"]
-VOLUME ["/base63/var/secrets.json"]
+VOLUME ["/base63/.env"]
 WORKDIR /base63
 EXPOSE 10000
 USER base63

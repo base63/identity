@@ -22,7 +22,6 @@ env:
   - DATABASE_MIGRATIONS_DIR=./migrations
   - DATABASE_MIGRATIONS_TABLE=migrations_identity
   - PGSSLMODE=require
-  - SECRET_PATH=null
   - ORIGIN=null
   - CLIENTS=null
   - AUTH0_CLIENT_ID=null
