@@ -13,3 +13,4 @@
 
 # Secrets files
 secrets.json
+.env
