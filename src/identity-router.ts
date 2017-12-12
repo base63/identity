@@ -1,3 +1,6 @@
+/** Defines the IdentityRouter. */
+
+/** Imports. Also so typedoc works correctly. */
 import * as auth0 from 'auth0'
 import { wrap } from 'async-middleware'
 import * as cookieParser from 'cookie-parser'
@@ -32,17 +35,48 @@ import { Auth0Profile } from './auth0-profile'
 import { Repository } from './repository'
 
 
+/** Application level configuration needed in building the identity router. */
 export interface AppConfig {
+    /** The current {@link Env}. */
     env: Env;
+    /** A unique name for this service. */
     name: string;
+    /**
+     * The set of allowed hostnames which can be clients. Will be matched against the Origin header
+     * of incoming requests.
+     */
     clients: string[];
+    /**
+     * Disable all logging. Used for tests. Otherwise logs output to the console in {@link Env.Local}
+     * and {@link Env.Test} and to loggly in {@link Env.Staging} or {@link Env.Prod}
+     */
     forceDisableLogging: boolean;
+    /** The secret token for the Loggly logging service. */
     logglyToken: string | null;
+    /** The subdomain for the Loggly logging service. */
     logglySubdomain: string | null;
+    /** The secret token for the Rollbar error reporting service. */
     rollbarToken: string | null;
 }
 
 
+/**
+ * Construct an IdentityRouter. This is an full formed and independent {@link express.Router}
+ * which implements the HTTP API for the identity service. It makes the connection between clients,
+ * external services and the business logic encapsulated in the {@link Repository}.
+ * @note This is meant to be mounted by an express application at the root, but can work at any
+ *     subpath in principle. It's meant to do it's own thing and be independent of whatever else
+ *     there might be going on.
+ * @note The router has the following paths exposed:
+ *    @path /session POST, GET, DELETE
+ *    @path /session/agree-to-cookie-policy POST
+ *    @path /user POST, GET
+ *    @path /users-info?ids GET
+ * @param config - the application configuration.
+ * @param auth0Client - a client for Auth0.
+ * @param repository - a repository.
+ * @return An {@link express.Router} doing all of the above.
+ */
 export function newIdentityRouter(
     config: AppConfig,
     auth0Client: auth0.AuthenticationClient,
@@ -193,6 +227,7 @@ export function newIdentityRouter(
             res.write(JSON.stringify(sessionResponseMarshaller.pack(sessionResponse)));
             res.end();
         } catch (e) {
+
             if (e.name == 'SessionNotFoundError') {
                 res.status(HttpStatus.NOT_FOUND);
                 res.end();
@@ -378,7 +413,7 @@ export function newIdentityRouter(
             return;
         }
 
-        if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
+        if (ids.length > Repository.MAX_NUMBER_OF_USERS_TO_RETURN) {
             req.log.warn(`Can't retrieve ${ids.length} users`);
             res.status(HttpStatus.BAD_REQUEST);
             res.end();

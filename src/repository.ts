@@ -1,3 +1,6 @@
+/** Defines {@link Repository}. */
+
+/** Imports. Also so typedoc works correctly. */
 import * as knex from 'knex'
 import { Marshaller, MarshalFrom } from 'raynor'
 import * as uuid from 'uuid'
@@ -21,6 +24,7 @@ import { SessionToken } from '@base63/identity-sdk-js/session-token'
 import { Auth0Profile } from './auth0-profile'
 
 
+/** The base class of errors raised by the {@link Repository} and a generic error itself. */
 export class RepositoryError extends Error {
     constructor(message: string) {
         super(message);
@@ -29,6 +33,7 @@ export class RepositoryError extends Error {
 }
 
 
+/** Error raised when a session could not be found. */
 export class SessionNotFoundError extends RepositoryError {
     constructor(message: string) {
         super(message);
@@ -37,6 +42,7 @@ export class SessionNotFoundError extends RepositoryError {
 }
 
 
+/** Error raised when an Xsrf token provided for a mutation does not match what we expect it to. */
 export class XsrfTokenMismatchError extends RepositoryError {
     constructor(message: string) {
         super(message);
@@ -45,6 +51,7 @@ export class XsrfTokenMismatchError extends RepositoryError {
 }
 
 
+/** Error raised when a user could not be found. */
 export class UserNotFoundError extends RepositoryError {
     constructor(message: string) {
         super(message);
@@ -53,9 +60,20 @@ export class UserNotFoundError extends RepositoryError {
 }
 
 
-
+/**
+ * The final arbiter of business logic and the handler of interactions with the storage engine.
+ * @note Each method represents an action which can be done on the entities the identity service
+ *     operates with. Conversely, no other action can be done on these entities that is not
+ *     provided by this class.
+ * @note The storage engine is PostgreSQL at the moment. Each entity (session and user) has a
+ *     corresponding table. Each also has a corresponding events table. Whenever a mutation
+ *     occurs, the fact is recorded in the events table along side the data of the mutation.
+ *     Ideally, one would be able to reconstruct the current state in the entity table, by
+ *     applying the mutations described in the events table in order.
+ */
 export class Repository {
-    public static readonly MAX_NUMBER_OF_USERS: number = 20;
+    /** The maximum number of users {@link Repository.getUsersInfo} is allowed to return. */
+    public static readonly MAX_NUMBER_OF_USERS_TO_RETURN: number = 20;
 
     private static readonly _sessionFields = [
         'identity.session.id as session_id',
@@ -84,16 +102,34 @@ export class Repository {
     private readonly _conn: knex;
     private readonly _auth0ProfileMarshaller: Marshaller<Auth0Profile>;
 
+    /**
+     * Construct a repository.
+     * @param conn - An open connection to the database.
+     */
     constructor(conn: knex) {
         this._conn = conn;
         this._auth0ProfileMarshaller = new (MarshalFrom(Auth0Profile))();
 
     }
 
+    /** Perform any initialization work on the repository before it can begin serving. */
     async init(): Promise<void> {
         await this._conn.schema.raw('set session characteristics as transaction isolation level serializable;');
     }
 
+    /**
+     * Retrieve the session associated with the provided {@link SessionToken}, or create a new one
+     * if there's no token. If the token is null or if it doesn't exist, a new session is created.
+     * This means allocating a token and creating a session for it.
+     * @note The operation is idempotent wrt sessionToken. Calling this multiple times with the same
+     *     sessionToken (or with the same sessionId more precisely) will just retrieve the initial one.
+     * @param sessionToken - the session token to try to retrieve. Can be null, in which case a
+     *     new session will be created.
+     * @param requestTime - the time at which the request was issued to the identity service. Used
+     *     populate various "modified_at" fields.
+     * @return a tuple of {@link SessionToken}, {@link Session} and a boolean indicating whether
+     *     a new session was created or not.
+     */
     async getOrCreateSession(sessionToken: SessionToken | null, requestTime: Date): Promise<[SessionToken, Session, boolean]> {
         let dbSession: any | null = null;
         let needToCreateSession = sessionToken == null;
@@ -151,6 +187,13 @@ export class Repository {
         return [newSessionToken, Repository._dbSessionToSession(dbSession), needToCreateSession];
     }
 
+    /**
+     * Retrieve the session associated with the provided {@link SessionToken}.
+     * @param sessionToken - the session token to try to retrieve.
+     * @return A {@link Session} object describing the session.
+     * @throws If the session token doesn't identify an existing active session, this will raise
+     *     a {@link SessionNotFoundError}.
+     */
     async getSession(sessionToken: SessionToken): Promise<Session> {
         const dbSessions = await this._conn('identity.session')
             .select(Repository._sessionFields)
@@ -167,6 +210,22 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
+    /**
+     * Remove the session identified by the provided {@link SessionToken}.
+     * @note This simply marks the session as being in the {@link SessionState.Removed} state,
+     *     and adds the appropriate event for the session, but doesn't physically remove anything.
+     * @note This is a mutation, and as such an xsrfToken needs to be provided and match the one
+     *     attached to the session.
+     * @param sessionToken - the session token to try to remove.
+     * @param requestTime - the time at which the request was issued to the identity service. Used
+     *     populate various "modified_at" fields.
+     * @param xsrfToken - the xsrfToken which guards this mutation from being issues via XSRF
+     *     attacks.
+     * @throws If the session token doesn't identify an existing active session, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the session's XSRF token and the provided one don't match, this will raise
+     *     a {@link XsrfTokenMismatchError}.
+     */
     async removeSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<void> {
         await this._conn.transaction(async (trx) => {
             const dbSessions = await trx
@@ -201,6 +260,23 @@ export class Repository {
         });
     }
 
+    /**
+     * Agree to the cookie policy for the session identified by {@link SessionToken}. If the user is
+     * also logged in (there exists an attached {@link User}), that is also marked as such.
+     * @note Events are generated for both the session and user entities.
+     * @note This is a mutation, and as such an xsrfToken needs to be provided and match the one
+     *     attached to the session.
+     * @note This operation is idempotent.
+     * @param sessionToken - the session token to try to remove.
+     * @param requestTime - the time at which the request was issued to the identity service. Used
+     *     populate various "modified_at" fields.
+     * @param xsrfToken - the xsrfToken which guards this mutation from being issues via XSRF
+     *     attacks.
+     * @throws If the session token doesn't identify an existing active session, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the session's XSRF token and the provided one don't match, this will raise
+     *     a {@link XsrfTokenMismatchError}.
+     */
     async agreeToCookiePolicyForSession(sessionToken: SessionToken, requestTime: Date, xsrfToken: string): Promise<Session> {
         let dbSession: any | null = null;
 
@@ -262,6 +338,31 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession);
     }
 
+
+    /**
+     * Retrieve the session and the corresponding user associated with the provided
+     * {@link SessionToken} and {@link Auth0Profile}, or create a new one if there's no token
+     * or user. To be more precise, the session must exist, it's just the user which is optional.
+     * @note The operation is idempotent wrt sessionToken and auth0Profile. Calling this multiple
+     *     times with the same sessionToken and auth0Profile (or sessionId and userToken more
+     *     precisely) will just retrieve the initial ones.
+     * @note This is a mutation, and as such an xsrfToken needs to be provided and match the one
+     *     attached to the session.
+     * @param sessionToken - the session for which the user will be created.
+     * @param auth0Profile - information from Auth0 about the user.
+     * @param requestTime - the time at which the request was issued to the identity service. Used
+     *     populate various "modified_at" fields.
+     * @param xsrfToken - the xsrfToken which guards this mutation from being issues via XSRF
+     *     attacks.
+     * @return a tuple of {@link SessionToken}, {@link Session} and a boolean indicating whether
+     *     a new user was created or not.
+     * @throws If the session token doesn't identify an existing active session, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the session exists, but is attached to another user, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the session's XSRF token and the provided one don't match, this will raise
+     *     a {@link XsrfTokenMismatchError}.
+     */
     async getOrCreateUserOnSession(sessionToken: SessionToken, auth0Profile: Auth0Profile, requestTime: Date, xsrfToken: string): Promise<[SessionToken, Session, boolean]> {
         const userId = auth0Profile.userId;
         const userIdHash = auth0Profile.getUserIdHash();
@@ -377,6 +478,19 @@ export class Repository {
         return [sessionToken, session, userEventType as UserEventType == UserEventType.Created as UserEventType];
     }
 
+    /**
+     * Retrieve the session and user associated with the provided {@link SessionToken} and
+     * {@link Auth0Profile}
+     * @param sessionToken - the session token to try to retrieve.
+     * @param auth0Profile - the Auth0 profile of the user.
+     * @return A {@link Session} object describing the session and user.
+     * @throws If the session token doesn't identify an existing active session, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the session exists, but is attached to another user, this will raise
+     *     a {@link SessionNotFoundError}.
+     * @throws If the Auth0 profile information doesn't identify an existing active user, this will
+     *     raise a {@link UserNotFoundError}.
+     */
     async getUserOnSession(sessionToken: SessionToken, auth0Profile: Auth0Profile): Promise<Session> {
         const userIdHash = auth0Profile.getUserIdHash();
 
@@ -411,12 +525,24 @@ export class Repository {
         return Repository._dbSessionToSession(dbSession, dbUser, auth0Profile);
     }
 
+    /**
+     * Retrieve a set of users. Only a safe public view of the user is provided, as this
+     * is meant to be called on behalf of one user to find information about other users.
+     * @note At most {@link Repository.MAX_NUMBER_OF_USERS_TO_RETURN} values will be provided.
+     * @todo Some pagination will be required here.
+     * @param ids - an array of ids of users to return.
+     * @return A list of user information.
+     * @throws If there's no ids to retrieve or if there are too many, then this will raise
+     *     a {@link RepositoryError}.
+     * @throws If one of the requested users can't be retrieved, either because it doesn't exist
+     *     or is inactive, this will throw {@link UserNotFoundError}.
+     */
     async getUsersInfo(ids: number[]): Promise<PublicUser[]> {
         if (ids.length == 0) {
             throw new RepositoryError('Need to retrieve some users');
         }
 
-        if (ids.length > Repository.MAX_NUMBER_OF_USERS) {
+        if (ids.length > Repository.MAX_NUMBER_OF_USERS_TO_RETURN) {
             throw new RepositoryError(`Can't retrieve ${ids.length} users`);
         }
 
@@ -424,7 +550,7 @@ export class Repository {
             .select(Repository._userFields)
             .whereIn('id', ids)
             .andWhere({ state: UserState.Active })
-            .limit(Repository.MAX_NUMBER_OF_USERS);
+            .limit(Repository.MAX_NUMBER_OF_USERS_TO_RETURN);
 
         if (dbUsers.length != ids.length) {
             throw new UserNotFoundError(`Looking for ids ${JSON.stringify(ids)} but got ${JSON.stringify(dbUsers.map((u: any) => u['user_id']))}`);
