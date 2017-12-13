@@ -37,7 +37,7 @@ async function main() {
     app.disable('x-powered-by');
     app.use('/', identityRouter);
     app.listen(config.PORT, config.ADDRESS, () => {
-        console.log(`Started identity service on ${config.ADDRESS}:${config.PORT}`);
+        console.log(`Started ${config.NAME} service on ${config.ADDRESS}:${config.PORT}`);
     });
 }
 
