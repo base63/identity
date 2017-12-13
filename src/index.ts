@@ -2,16 +2,12 @@ import * as auth0 from 'auth0'
 import * as express from 'express'
 import * as knex from 'knex'
 
-import { startupMigration } from '@base63/common-server-js'
-
 import * as config from './config'
 import { newIdentityRouter } from './identity-router'
 import { Repository } from './repository'
 
 
 async function main() {
-    startupMigration();
-
     const auth0Client = new auth0.AuthenticationClient({
         clientId: config.AUTH0_CLIENT_ID,
         domain: config.AUTH0_DOMAIN

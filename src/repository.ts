@@ -7,6 +7,7 @@ import * as uuid from 'uuid'
 
 import { randomBytes } from 'crypto'
 
+import { startupMigration } from '@base63/common-server-js'
 import {
     Role,
     PrivateUser,
@@ -114,6 +115,7 @@ export class Repository {
 
     /** Perform any initialization work on the repository before it can begin serving. */
     async init(): Promise<void> {
+        startupMigration();
         await this._conn.schema.raw('set session characteristics as transaction isolation level serializable;');
     }
 
