@@ -36,11 +36,6 @@ ENV DATABASE_MIGRATIONS_DIR /base63/migrations
 ENV DATABASE_MIGRATIONS_TABLE migrations_identity
 ENV ORIGIN http://localhost:10001
 ENV CLIENTS http://localhost:10002,http://localhost:10003
-ENV AUTH0_CLIENT_ID null
-ENV AUTH0_DOMAIN null
-ENV LOGGLY_TOKEN null
-ENV LOGGLY_SUBDOMAIN null
-ENV ROLLBAR_TOKEN null
 
 RUN chown -R base63:base63 /base63/build
 RUN chown -R base63:base63 /base63/out

@@ -27,7 +27,7 @@ import {
 } from './repository'
 
 
-describe('App', () => {
+describe('IdentityRouter', () => {
     const localAppConfig: AppConfig = {
         env: Env.Local,
         name: 'identity',
@@ -137,15 +137,15 @@ describe('App', () => {
     });
 
     it('can be constructed', () => {
-        const app = newIdentityRouter(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+        const identityRouter = newIdentityRouter(localAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
-        expect(app).is.not.null;
+        expect(identityRouter).is.not.null;
     });
 
     it('can be constructed with prod settings', () => {
-        const app = newIdentityRouter(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
+        const identityRouter = newIdentityRouter(stagingAppConfig, auth0Client as auth0.AuthenticationClient, repository as Repository);
 
-        expect(app).is.not.null;
+        expect(identityRouter).is.not.null;
     });
 
     describe('/session POST', () => {
@@ -702,18 +702,18 @@ describe('App', () => {
                 app.use('/', router);
 
                 const appAgent = agent(app);
-                let restOfTest: Test|null = null;
+                let restOfTest: Test | null = null;
 
                 switch (method) {
-                case 'post':
-                    restOfTest = appAgent.post(uri);
-                    break;
-                case 'get':
-                    restOfTest = appAgent.get(uri);
-                    break;
-                case 'delete':
-                    restOfTest = appAgent.delete(uri);
-                    break;
+                    case 'post':
+                        restOfTest = appAgent.post(uri);
+                        break;
+                    case 'get':
+                        restOfTest = appAgent.get(uri);
+                        break;
+                    case 'delete':
+                        restOfTest = appAgent.delete(uri);
+                        break;
                 }
 
                 td.when(auth0Client.getProfile(td.matchers.anything()))
@@ -731,7 +731,7 @@ describe('App', () => {
                     .expect('Vary', 'Accept-Encoding')
                     .expect('Connection', 'close')
                     .then(response => {
-expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
+                        expect(response.header).contain.keys('content-type', 'date', 'connection', 'transfer-encoding', 'content-encoding', 'vary');
                         expect(Object.keys(response.header)).has.length(6);
 
                         expect(response.text).to.have.length(0);
