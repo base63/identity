@@ -1,6 +1,6 @@
 {
     "name": "@base63/identity",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "The identity service.",
     "author": "Base63 team",
     "scripts": {
@@ -27,8 +27,8 @@
     },
     "dependencies": {
         "@base63/common-js": "=1.0.0",
-        "@base63/common-server-js": "=1.6.0",
-        "@base63/identity-sdk-js": "=0.6.0",
+        "@base63/common-server-js": "=1.6.1",
+        "@base63/identity-sdk-js": "=0.6.1",
         "async-middleware": "=1.2.1",
         "auth0": "=2.9.1",
         "compression": "=1.7.1",
@@ -45,7 +45,6 @@
         "@types/auth0": "=2.5.2",
         "@types/bluebird": "=3.5.18",
         "@types/chai": "=4.0.8",
-        "@types/continuation-local-storage": "=3.2.1",
         "@types/compression": "=0.0.35",
         "@types/cookie-parser": "=1.4.1",
         "@types/dotenv": "=4.0.2",
