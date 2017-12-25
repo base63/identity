@@ -59,7 +59,7 @@ deploy:
     tags: true
 - provider: script
   skip_cleanup: true
-  script: docker build --tag base63/identity:$TRAVIS_TAG && docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD" && docker push base63/identity:$TRAVIS_TAG
+  script: docker build --tag base63/identity:$TRAVIS_TAG . && docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD" && docker push base63/identity:$TRAVIS_TAG
   on:
     tags: true
 # - provider: heroku
