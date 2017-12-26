@@ -40,10 +40,6 @@ ENV CLIENTS http://localhost:10002,http://localhost:10003,http://localhost:10004
 RUN chown -R base63:base63 /base63/build
 RUN chown -R base63:base63 /base63/out
 RUN chown -R base63:base63 /base63/var
-VOLUME ["/base63/src"]
-VOLUME ["/base63/migrations"]
-VOLUME ["/base63/node_modules"]
-VOLUME ["/base63/.env"]
 WORKDIR /base63
 EXPOSE 10000
 USER base63
