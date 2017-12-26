@@ -11,10 +11,6 @@ Dockerfile
 # Build process output files.
 /build/
 /docs/
-/out/
-
-# NPM packages.
-/node_modules/
 
 # Anything containing .DS_Store
 .DS_Store
