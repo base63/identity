@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.3
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:extend:20180424':
+    - '@base63/common-server-js > rollbar > extend':
+        patched: '2019-01-04T02:15:04.668Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > rollbar > extend':
+        patched: '2019-01-04T02:15:04.668Z'
