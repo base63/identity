@@ -30,7 +30,7 @@
         "@base63/common-server-js": "=1.6.1",
         "@base63/identity-sdk-js": "=0.7.4",
         "async-middleware": "=1.2.1",
-        "auth0": "=2.9.1",
+        "auth0": "2.27.1",
         "compression": "=1.7.1",
         "cookie-parser": "=1.4.3",
         "express": "=4.16.2",
