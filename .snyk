@@ -1,0 +1,83 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:extend:20180424':
+    - '@base63/common-server-js > rollbar > extend':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > rollbar > extend':
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > request > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - knex > liftoff > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > extend':
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > extend':
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > http-proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > https-proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > socks-proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > http-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > https-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > socks-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > http-proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > https-proxy-agent > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > get-uri > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > http-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > rest-facade > superagent-proxy > proxy-agent > pac-proxy-agent > https-proxy-agent > agent-base > extend:
+        patched: '2022-10-06T15:57:00.637Z'
+  'npm:hoek:20180212':
+    - auth0 > request > hawk > hoek:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > request > hawk > boom > hoek:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > request > hawk > sntp > hoek:
+        patched: '2022-10-06T15:57:00.637Z'
+    - auth0 > request > hawk > cryptiles > boom > hoek:
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > boom > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > sntp > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > boom > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > cryptiles > boom > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > sntp > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > hawk > cryptiles > boom > hoek':
+        patched: '2022-10-06T15:57:00.637Z'
+  SNYK-JS-LODASH-567746:
+    - knex > lodash:
+        patched: '2022-10-06T15:57:00.637Z'
+  'npm:stringstream:20180511':
+    - auth0 > request > stringstream:
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > stringstream':
+        patched: '2022-10-06T15:57:00.637Z'
+    - '@base63/identity-sdk-js > @base63/common-server-js > bunyan-loggly > node-loggly-bulk > request > stringstream':
+        patched: '2022-10-06T15:57:00.637Z'
